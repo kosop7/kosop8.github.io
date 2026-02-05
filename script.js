@@ -1,4 +1,4 @@
-// 드래곤볼 Z 게임 - 새 위치 수정 버전
+// 드래곤볼 Z 게임 - 새 움직임 수정 버전
 class DragonBallZGame {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
@@ -486,7 +486,7 @@ class DragonBallZGame {
         const h = ctx.canvas.height;
 
         switch(sceneIndex) {
-            case 3: // SCENE 4: 비둘기 효과 - 원래 위치로 복원
+            case 3: // SCENE 4: 비둘기 효과
                 this.drawDove();
                 break;
                 
@@ -499,26 +499,32 @@ class DragonBallZGame {
     drawDove() {
         const ctx = this.ctx;
         const time = Date.now() * 0.001;
-        // 원래 위치로 복원: 화면 중앙에서 시작
-        const x = ctx.canvas.width * 0.5;
-        const y = ctx.canvas.height * 0.3;
+        
+        // 왼쪽에서 오른쪽으로 움직이는 새
+        const progress = (time * 0.3) % 1; // 0에서 1까지 반복
+        const x = -ctx.canvas.width * 0.3 + progress * (ctx.canvas.width * 1.6); // 왼쪽(-30%)에서 오른쪽(+130%)으로
+        const y = ctx.canvas.height * 0.3 + Math.sin(time * 2) * 10; // 약간의 상하 움직임
 
         ctx.save();
         ctx.translate(x, y);
 
+        // 새 몸통
         ctx.fillStyle = 'white';
         ctx.beginPath();
         ctx.ellipse(0, 0, 15, 8, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        // 날개 (펄럭이는 효과)
+        const wingFlap = Math.sin(time * 8) * 0.3;
         ctx.beginPath();
-        ctx.ellipse(-12, -3, 12, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(-12, -3, 12, 6, wingFlap, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.beginPath();
-        ctx.ellipse(12, -3, 12, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(12, -3, 12, 6, -wingFlap, 0, Math.PI * 2);
         ctx.fill();
 
+        // 머리
         ctx.beginPath();
         ctx.arc(0, -8, 5, 0, Math.PI * 2);
         ctx.fill();
@@ -598,6 +604,7 @@ class DragonBallZGame {
     }
 }
 
+// 나머지 클래스들은 이전과 동일하게 유지
 class Character {
     constructor(x, y) {
         this.x = x;
@@ -679,7 +686,7 @@ class Gohan extends Character {
                 this.hairColor = '#FFD700';
                 this.aura.active = true;
                 this.aura.intensity = 2;
-                this.scale = 1.2; // 초사이어인 시 크기 약간 증가
+                this.scale = 1.2;
                 break;
                 
             case 'final':
@@ -687,7 +694,7 @@ class Gohan extends Character {
                 this.hairColor = '#FFD700';
                 this.aura.active = true;
                 this.aura.intensity = 2.5;
-                this.scale = 2.0; // 각성 후 크기 2배 증가
+                this.scale = 2.0;
                 break;
         }
     }
@@ -911,8 +918,8 @@ class Android16 extends Character {
     constructor(x, y, state = 'normal') {
         super(x, y);
         this.state = state;
-        this.hairColor = '#CC0000'; // 빨간 머리카락
-        this.skinColor = '#FFD7B5'; // 살색 얼굴
+        this.hairColor = '#CC0000';
+        this.skinColor = '#FFD7B5';
         this.damage = 0;
     }
 
@@ -925,17 +932,14 @@ class Android16 extends Character {
     }
 
     drawCharacter(ctx) {
-        // 머리통이 오른쪽으로 누워있는 형태
         ctx.save();
-        ctx.rotate(Math.PI / 6); // 30도 기울임
+        ctx.rotate(Math.PI / 6);
         
-        // 얼굴 배경 (살색)
         ctx.fillStyle = this.skinColor;
         ctx.beginPath();
         ctx.ellipse(0, 0, 30, 20, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // 머리카락 (빨간색)
         ctx.fillStyle = this.hairColor;
         ctx.beginPath();
         ctx.ellipse(0, -15, 25, 10, 0, 0, Math.PI * 2);
@@ -949,7 +953,6 @@ class Android16 extends Character {
         ctx.ellipse(25, 0, 8, 12, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // 눈 (검정색, 무표정)
         ctx.fillStyle = 'black';
         ctx.beginPath();
         ctx.ellipse(-12, -5, 6, 4, 0, 0, Math.PI * 2);
@@ -959,7 +962,6 @@ class Android16 extends Character {
         ctx.ellipse(8, -5, 6, 4, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // 코
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(-3, 5);
@@ -967,7 +969,6 @@ class Android16 extends Character {
         ctx.closePath();
         ctx.fill();
         
-        // 입 (무표정한 직선)
         ctx.strokeStyle = 'black';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -975,7 +976,6 @@ class Android16 extends Character {
         ctx.lineTo(10, 10);
         ctx.stroke();
         
-        // 파손 효과
         if (this.damage > 0) {
             ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
             ctx.lineWidth = 2;
