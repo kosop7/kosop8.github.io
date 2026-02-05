@@ -1,4 +1,4 @@
-// 드래곤볼 Z 게임 - 새 움직임 수정 버전
+// 드래곤볼 Z 게임 - BGM MP3 전용 버전
 class DragonBallZGame {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
@@ -47,15 +47,21 @@ class DragonBallZGame {
     }
 
     setupBGM() {
+        // MP3 파일로 BGM 소스 설정
+        this.bgm.src = 'assets/BGM.mp3'; // MP3 파일 경로
+        this.bgm.type = 'audio/mpeg'; // MP3 MIME 타입
+        
         // BGM 자동 재생 시도 (볼륨 아주 작게 설정)
         const playBGM = () => {
             if (!this.isBGMPlaying) {
                 this.bgm.volume = 0.1; // 볼륨 아주 작게 (10%)
                 this.bgm.loop = true;
+                this.bgm.load(); // 소스 변경 후 로드
                 this.bgm.play().then(() => {
                     this.isBGMPlaying = true;
+                    console.log('BGM MP3 재생 시작');
                 }).catch(error => {
-                    console.log('BGM 재생 실패:', error);
+                    console.log('BGM MP3 재생 실패:', error);
                 });
             }
         };
@@ -63,6 +69,9 @@ class DragonBallZGame {
         // 사용자 상호작용 시 BGM 재생
         document.addEventListener('click', playBGM);
         document.addEventListener('touchstart', playBGM);
+        
+        // 페이지 로드 시에도 재생 시도
+        window.addEventListener('load', playBGM);
     }
 
     startLoading() {
@@ -100,11 +109,13 @@ class DragonBallZGame {
         this.loadScene(0);
         this.gameLoop();
         
-        // 게임 시작 시 BGM 재생 시도
+        // 게임 시작 시 BGM 재생 시도 (MP3)
         if (!this.isBGMPlaying) {
             setTimeout(() => {
                 this.bgm.play().then(() => {
                     this.isBGMPlaying = true;
+                }).catch(error => {
+                    console.log('BGM 자동 재생 실패, 사용자 상호작용 필요:', error);
                 });
             }, 1000);
         }
@@ -501,9 +512,9 @@ class DragonBallZGame {
         const time = Date.now() * 0.001;
         
         // 왼쪽에서 오른쪽으로 움직이는 새
-        const progress = (time * 0.3) % 1; // 0에서 1까지 반복
-        const x = -ctx.canvas.width * 0.3 + progress * (ctx.canvas.width * 1.6); // 왼쪽(-30%)에서 오른쪽(+130%)으로
-        const y = ctx.canvas.height * 0.3 + Math.sin(time * 2) * 10; // 약간의 상하 움직임
+        const progress = (time * 0.3) % 1;
+        const x = -ctx.canvas.width * 0.3 + progress * (ctx.canvas.width * 1.6);
+        const y = ctx.canvas.height * 0.3 + Math.sin(time * 2) * 10;
 
         ctx.save();
         ctx.translate(x, y);
