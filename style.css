@@ -1,91 +1,82 @@
-* {
+
+    * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    -webkit-user-select: none;
-    user-select: none;
     touch-action: manipulation;
 }
 
 body {
-    font-family: 'Noto Sans KR', sans-serif;
-    background: #000;
     overflow: hidden;
+    background: #000;
+    font-family: 'Noto Sans KR', sans-serif, 굴림, Gulim;
     width: 100vw;
     height: 100vh;
     position: fixed;
 }
 
-#game-container {
+.container {
     position: relative;
     width: 100%;
     height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background: #000;
 }
 
-#game-canvas {
+#gameCanvas {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    display: block;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
+    z-index: 1;
 }
 
-#ui-layer {
+.dialog-box {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-
-#dialogue-box {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
+    bottom: 20px;
+    left: 10px;
+    right: 10px;
     background: rgba(0, 0, 0, 0.85);
-    color: white;
+    border: 3px solid #444;
+    border-radius: 15px;
     padding: 20px;
-    border-top: 3px solid #8A2BE2;
-    transform: translateY(0);
-    transition: transform 0.3s ease;
-    pointer-events: auto;
+    z-index: 2;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     backdrop-filter: blur(5px);
-    min-height: 30vh;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
 }
 
-#dialogue-box.hidden {
-    transform: translateY(100%);
-}
-
-#speaker-name {
-    font-size: 1.4em;
-    font-weight: 900;
-    color: #8A2BE2;
-    margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-#dialogue-text {
-    font-size: 1.2em;
-    line-height: 1.6;
+.character-name {
+    color: #ffcc00;
+    font-size: 1.8rem;
+    font-weight: 700;
     margin-bottom: 15px;
-    min-height: 4.8em;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    letter-spacing: 1px;
 }
 
-#touch-indicator {
+.dialog-text {
+    color: #fff;
+    font-size: 1.6rem;
+    line-height: 1.5;
+    min-height: 60px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.5px;
+}
+
+.touch-hint {
+    color: #aaa;
+    font-size: 1.2rem;
     text-align: center;
-    font-size: 0.9em;
-    color: #AAA;
+    margin-top: 10px;
     animation: pulse 1.5s infinite;
-    padding: 5px;
 }
 
 @keyframes pulse {
@@ -93,19 +84,20 @@ body {
     50% { opacity: 1; }
 }
 
-#scene-indicator {
+.scene-indicator {
     position: absolute;
     top: 20px;
     right: 20px;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 1em;
-    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    background: rgba(0, 0, 0, 0.7);
     padding: 8px 15px;
     border-radius: 20px;
-    backdrop-filter: blur(3px);
+    font-size: 1.2rem;
+    z-index: 2;
+    border: 1px solid #444;
 }
 
-#loading-screen {
+.loading-screen {
     position: absolute;
     top: 0;
     left: 0;
@@ -116,90 +108,75 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 10;
 }
 
 .loading-text {
-    color: #8A2BE2;
-    font-size: 2em;
-    font-weight: 900;
-    margin-bottom: 10px;
-    text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
-    animation: glow 2s infinite alternate;
-}
-
-.loading-subtext {
-    color: #FFD700;
-    font-size: 1.2em;
+    color: #fff;
+    font-size: 2rem;
     margin-bottom: 30px;
-}
-
-@keyframes glow {
-    from { text-shadow: 0 0 10px rgba(138, 43, 226, 0.5); }
-    to { text-shadow: 0 0 20px rgba(138, 43, 226, 0.8); }
+    text-shadow: 0 0 10px #00ffff;
 }
 
 .loading-bar {
     width: 80%;
     max-width: 400px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
+    height: 20px;
+    background: #333;
+    border-radius: 10px;
     overflow: hidden;
+    border: 2px solid #444;
 }
 
 .loading-progress {
     height: 100%;
-    background: linear-gradient(90deg, #8A2BE2, #4B0082);
+    background: linear-gradient(90deg, #ffcc00, #ff6600);
     width: 0%;
-    transition: width 0.3s ease;
-    border-radius: 2px;
+    transition: width 0.3s;
 }
 
 /* 모바일 최적화 */
 @media (max-width: 768px) {
-    #dialogue-box {
+    .dialog-box {
+        bottom: 10px;
+        left: 5px;
+        right: 5px;
         padding: 15px;
-        min-height: 25vh;
+        min-height: 130px;
     }
     
-    .loading-text {
-        font-size: 1.5em;
+    .character-name {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
     }
     
-    #speaker-name {
-        font-size: 1.2em;
+    .dialog-text {
+        font-size: 1.4rem;
+        min-height: 50px;
     }
     
-    #dialogue-text {
-        font-size: 1em;
-        min-height: 6em;
+    .touch-hint {
+        font-size: 1.1rem;
     }
     
-    #scene-indicator {
-        font-size: 0.9em;
+    .scene-indicator {
         top: 10px;
         right: 10px;
+        font-size: 1rem;
         padding: 6px 12px;
     }
 }
 
-@media (min-width: 769px) and (max-width: 1024px) {
-    #dialogue-box {
-        min-height: 22vh;
+@media (max-width: 480px) {
+    .character-name {
+        font-size: 1.3rem;
     }
-}
-
-@media (min-width: 1025px) {
-    #game-container {
-        max-width: 1200px;
-        max-height: 800px;
-        margin: 0 auto;
-        position: relative;
-        top: 50%;
-        transform: translateY(-50%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        overflow: hidden;
+    
+    .dialog-text {
+        font-size: 1.2rem;
+    }
+    
+    .loading-text {
+        font-size: 1.5rem;
     }
 }
