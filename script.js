@@ -1,1487 +1,841 @@
+
+
+// ============================================
+// 1. 게임 초기화 및 전역 변수
+// ============================================
+
 class DragonBallGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.dialogBox = document.getElementById('dialogBox');
-        this.dialogText = document.getElementById('dialogText');
-        this.characterName = document.getElementById('characterName');
-        this.sceneIndicator = document.getElementById('sceneIndicator');
-        this.loadingScreen = document.getElementById('loadingScreen');
-        this.loadingProgress = document.getElementById('loadingProgress');
+        this.ui = {
+            titleScreen: document.getElementById('title-screen'),
+            dialogueBox: document.getElementById('dialogue-box'),
+            sceneIndicator: document.getElementById('scene-indicator'),
+            progressBar: document.querySelector('.progress-bar')
+        };
         
-        this.currentScene = 0;
-        this.dialogIndex = 0;
-        this.isAnimating = false;
-        this.isLoading = true;
-        this.loadProgress = 0;
+        // 오디오 요소
+        this.audio = {
+            bgm: document.getElementById('bgm'),
+            sfx16: document.getElementById('sfx-16'),
+            sfxCell: document.getElementById('sfx-cell'),
+            sfxScream: document.getElementById('sfx-scream'),
+            sfxTransformation: document.getElementById('sfx-transformation')
+        };
         
+        // 게임 상태
+        this.state = {
+            currentScene: 0,
+            sceneProgress: 0,
+            isPlaying: false,
+            isPaused: false,
+            dialogueIndex: 0,
+            currentDialogue: null,
+            camera: {
+                x: 0,
+                y: 0,
+                zoom: 1,
+                shake: { intensity: 0, duration: 0 }
+            },
+            particles: [],
+            effects: [],
+            time: 0
+        };
+        
+        // 캐릭터 데이터
+        this.characters = {
+            gohan: {
+                x: 0,
+                y: 0,
+                emotion: 'normal',
+                aura: { intensity: 0, color: '#FFD700', particles: [] },
+                tears: [],
+                isTransformed: false
+            },
+            android16: {
+                x: 0,
+                y: 0,
+                isAlive: true,
+                damage: 0
+            },
+            cell: {
+                x: 0,
+                y: 0,
+                isAttacking: false
+            }
+        };
+        
+        // 씬 데이터
         this.scenes = [
             {
-                name: "붕괴 직전의 정적",
-                duration: 5000,
-                dialogs: [],
-                bgColor: '#1a1a2e'
-            },
-            {
-                name: "16호의 마지막 시선",
+                id: 0,
+                title: "SCENE 1. 붕괴 직전의 정적",
                 duration: 8000,
-                dialogs: [
-                    {
-                        character: "안드로이드 16호",
-                        text: "내가 좋아했던",
-                        delay: 1000
-                    },
-                    {
-                        character: "안드로이드 16호",
-                        text: "자연과 동물들을…",
-                        delay: 1500
-                    },
-                    {
-                        character: "안드로이드 16호",
-                        text: "지.켜.주.거.라.",
-                        delay: 2000
-                    },
-                    {
-                        character: "안드로이드 16호",
-                        text: "부탁한다~",
-                        delay: 1500
-                    }
-                ],
-                bgColor: '#2d3436'
+                camera: { start: { x: 0, y: -200, zoom: 0.3 }, end: { x: 0, y: 100, zoom: 0.8 } },
+                dialogue: []
             },
             {
-                name: "선택을 빼앗는 폭력",
-                duration: 4000,
-                dialogs: [
-                    {
-                        character: "셀",
-                        text: "쓸데없는 참견이다.",
-                        delay: 1000
-                    },
-                    {
-                        character: "셀",
-                        text: "실패작 녀석.",
-                        delay: 1000
-                    }
-                ],
-                bgColor: '#2d132c'
+                id: 1,
+                title: "SCENE 2. 16호의 마지막 시선",
+                duration: 10000,
+                camera: { start: { x: 200, y: 0, zoom: 1.5 }, end: { x: 200, y: 0, zoom: 2 } },
+                dialogue: [
+                    { speaker: "안드로이드 16호", text: "내가 좋아했던", delay: 1500 },
+                    { speaker: "안드로이드 16호", text: "자연과 동물들을…", delay: 2000 },
+                    { speaker: "안드로이드 16호", text: "지.켜.주.거.라.", delay: 2500 },
+                    { speaker: "안드로이드 16호", text: "부탁한다~", delay: 2000 }
+                ]
             },
-            {
-                name: "오반의 눈, 세계의 균열",
-                duration: 6000,
-                dialogs: [],
-                bgColor: '#801336'
-            },
-            {
-                name: "침묵의 임계점",
-                duration: 7000,
-                dialogs: [],
-                bgColor: '#510a32'
-            },
-            {
-                name: "폭발",
-                duration: 5000,
-                dialogs: [],
-                bgColor: '#c72c41'
-            },
-            {
-                name: "목격자들의 반응",
-                duration: 3000,
-                dialogs: [
-                    {
-                        character: "",
-                        text: "오반!!",
-                        delay: 1000
-                    }
-                ],
-                bgColor: '#ee4540'
-            },
-            {
-                name: "새로운 얼굴",
-                duration: 6000,
-                dialogs: [
-                    {
-                        character: "나레이션",
-                        text: "드디어... 오반의 분노의 한계가 넘은 것인가?",
-                        delay: 2000
-                    }
-                ],
-                bgColor: '#ff9a00'
-            },
-            {
-                name: "선언 없는 선언",
-                duration: 4000,
-                dialogs: [],
-                bgColor: '#000000'
-            }
+            // ... 나머지 씬들도 동일한 구조로 정의
         ];
         
         this.init();
     }
     
+    // ============================================
+    // 2. 초기화 함수
+    // ============================================
+    
     init() {
+        // 캔버스 크기 설정
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
         
-        // 터치 이벤트 리스너
-        this.canvas.addEventListener('touchstart', (e) => this.handleTouch(e));
-        this.canvas.addEventListener('click', (e) => this.handleTouch(e));
+        // UI 이벤트 리스너
+        document.getElementById('start-btn').addEventListener('click', () => this.startGame());
+        document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+        this.canvas.addEventListener('click', () => this.handleClick());
         
-        this.dialogBox.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.nextDialog();
-        });
+        // 게임 루프 시작
+        this.lastTime = 0;
+        requestAnimationFrame((time) => this.gameLoop(time));
         
-        this.dialogBox.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.nextDialog();
-        });
-        
-        this.loadAssets();
+        // 디버그 정보 업데이트
+        setInterval(() => this.updateDebugInfo(), 1000);
     }
     
     resizeCanvas() {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = this.canvas.getBoundingClientRect();
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.aspectRatio = this.canvas.width / this.canvas.height;
+    }
+    
+    // ============================================
+    // 3. 게임 루프 및 상태 관리
+    // ============================================
+    
+    gameLoop(currentTime) {
+        const deltaTime = currentTime - this.lastTime;
+        this.lastTime = currentTime;
         
-        this.canvas.width = rect.width * dpr;
-        this.canvas.height = rect.height * dpr;
+        // FPS 계산
+        this.fps = Math.round(1000 / deltaTime);
         
-        this.ctx.scale(dpr, dpr);
+        // 상태 업데이트
+        this.update(deltaTime);
         
-        this.canvas.style.width = rect.width + 'px';
-        this.canvas.style.height = rect.height + 'px';
+        // 화면 렌더링
+        this.render();
         
-        if (!this.isLoading) {
-            this.draw();
+        // 다음 프레임 요청
+        requestAnimationFrame((time) => this.gameLoop(time));
+    }
+    
+    update(deltaTime) {
+        if (!this.state.isPlaying || this.state.isPaused) return;
+        
+        this.state.time += deltaTime;
+        
+        // 현재 씬 업데이트
+        const scene = this.scenes[this.state.currentScene];
+        this.state.sceneProgress = Math.min(this.state.time / scene.duration, 1);
+        
+        // 카메라 업데이트
+        this.updateCamera(scene);
+        
+        // 파티클 및 효과 업데이트
+        this.updateParticles(deltaTime);
+        this.updateEffects(deltaTime);
+        
+        // 캐릭터 상태 업데이트
+        this.updateCharacters(deltaTime);
+        
+        // 씬 완료 체크
+        if (this.state.sceneProgress >= 1) {
+            this.nextScene();
+        }
+        
+        // UI 업데이트
+        this.updateUI();
+    }
+    
+    updateCamera(scene) {
+        const progress = this.state.sceneProgress;
+        const start = scene.camera.start;
+        const end = scene.camera.end;
+        
+        this.state.camera.x = start.x + (end.x - start.x) * progress;
+        this.state.camera.y = start.y + (end.y - start.y) * progress;
+        this.state.camera.zoom = start.zoom + (end.zoom - start.zoom) * progress;
+        
+        // 카메라 쉐이크
+        if (this.state.camera.shake.duration > 0) {
+            this.state.camera.shake.duration -= 16;
+            const intensity = this.state.camera.shake.intensity;
+            this.state.camera.x += (Math.random() - 0.5) * intensity * 2;
+            this.state.camera.y += (Math.random() - 0.5) * intensity * 2;
         }
     }
     
-    loadAssets() {
-        const totalSteps = 10;
-        let loadedSteps = 0;
+    // ============================================
+    // 4. 렌더링 시스템
+    // ============================================
+    
+    render() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        const progressInterval = setInterval(() => {
-            loadedSteps++;
-            this.loadProgress = (loadedSteps / totalSteps) * 100;
-            this.loadingProgress.style.width = this.loadProgress + '%';
-            
-            if (loadedSteps >= totalSteps) {
-                clearInterval(progressInterval);
-                setTimeout(() => {
-                    this.isLoading = false;
-                    this.loadingScreen.style.display = 'none';
-                    this.startGame();
-                }, 500);
-            }
-        }, 200);
-    }
-    
-    startGame() {
-        this.currentScene = 0;
-        this.dialogIndex = 0;
-        this.isAnimating = true;
-        this.updateSceneIndicator();
-        this.animate();
-    }
-    
-    handleTouch(e) {
-        e.preventDefault();
-        if (this.isAnimating) {
-            this.nextDialog();
-        }
-    }
-    
-    nextDialog() {
-        const scene = this.scenes[this.currentScene];
+        // 배경색 설정
+        this.drawBackground();
         
-        if (scene.dialogs.length > 0 && this.dialogIndex < scene.dialogs.length) {
-            const dialog = scene.dialogs[this.dialogIndex];
-            this.showDialog(dialog.character, dialog.text);
-            this.dialogIndex++;
-        }
-    }
-    
-    showDialog(character, text) {
-        this.characterName.textContent = character;
-        this.dialogText.textContent = text;
-        this.dialogBox.style.display = 'flex';
-    }
-    
-    hideDialog() {
-        this.dialogBox.style.display = 'none';
-        this.characterName.textContent = '';
-        this.dialogText.textContent = '';
-    }
-    
-    updateSceneIndicator() {
-        this.sceneIndicator.textContent = `Scene ${this.currentScene + 1}/9: ${this.scenes[this.currentScene].name}`;
-    }
-    
-    nextScene() {
-        this.currentScene++;
-        this.dialogIndex = 0;
+        // 카메라 변환 적용
+        this.applyCameraTransform();
         
-        if (this.currentScene >= this.scenes.length) {
-            this.currentScene = 0;
-        }
-        
-        this.updateSceneIndicator();
-        this.hideDialog();
-    }
-    
-    draw() {
-        const ctx = this.ctx;
-        const width = this.canvas.width / (window.devicePixelRatio || 1);
-        const height = this.canvas.height / (window.devicePixelRatio || 1);
-        const centerX = width / 2;
-        const centerY = height / 2;
-        
-        // 배경 그리기
-        const scene = this.scenes[this.currentScene];
-        ctx.fillStyle = scene.bgColor;
-        ctx.fillRect(0, 0, width, height);
-        
-        // 현재 씬에 따른 캐릭터 그리기
-        switch(this.currentScene) {
+        // 현재 씬에 따른 렌더링
+        switch(this.state.currentScene) {
             case 0:
-                this.drawScene1(ctx, width, height, centerX, centerY);
+                this.renderScene1();
                 break;
             case 1:
-                this.drawScene2(ctx, width, height, centerX, centerY);
+                this.renderScene2();
                 break;
             case 2:
-                this.drawScene3(ctx, width, height, centerX, centerY);
+                this.renderScene3();
                 break;
             case 3:
-                this.drawScene4(ctx, width, height, centerX, centerY);
+                this.renderScene4();
                 break;
             case 4:
-                this.drawScene5(ctx, width, height, centerX, centerY);
+                this.renderScene5();
                 break;
             case 5:
-                this.drawScene6(ctx, width, height, centerX, centerY);
+                this.renderScene6();
                 break;
             case 6:
-                this.drawScene7(ctx, width, height, centerX, centerY);
+                this.renderScene7();
                 break;
             case 7:
-                this.drawScene8(ctx, width, height, centerX, centerY);
+                this.renderScene8();
                 break;
             case 8:
-                this.drawScene9(ctx, width, height, centerX, centerY);
+                this.renderScene9();
                 break;
         }
         
-        // 특수 효과
-        this.drawSceneEffects(ctx, width, height);
+        // 파티클 렌더링
+        this.renderParticles();
+        
+        // 효과 렌더링
+        this.renderEffects();
+        
+        // 카메라 변환 복원
+        this.restoreCameraTransform();
     }
     
-    drawScene1(ctx, width, height, centerX, centerY) {
+    applyCameraTransform() {
+        this.ctx.save();
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        this.ctx.translate(centerX, centerY);
+        this.ctx.scale(this.state.camera.zoom, this.state.camera.zoom);
+        this.ctx.translate(-centerX + this.state.camera.x, -centerY + this.state.camera.y);
+    }
+    
+    restoreCameraTransform() {
+        this.ctx.restore();
+    }
+    
+    // ============================================
+    // 5. 씬별 렌더링 함수 (상세 구현)
+    // ============================================
+    
+    renderScene1() {
         // 경기장 배경
-        this.drawStadium(ctx, width, height);
+        this.drawDestroyedStadium();
         
-        // 손오반 그리기 (파란 띠, 보라색 도복)
-        this.drawGohanScene1(ctx, centerX, centerY);
+        // 손오반 렌더링
+        this.drawGohan({
+            x: 0,
+            y: this.canvas.height * 0.6,
+            emotion: 'defeated',
+            scale: 2
+        });
         
-        // 먼지 효과
-        this.drawDustParticles(ctx, width, height, 50);
+        // 먼지 입자 효과
+        this.addDustParticles();
     }
     
-    drawScene2(ctx, width, height, centerX, centerY) {
+    renderScene2() {
         // 안드로이드 16호 클로즈업
-        this.drawAndroid16(ctx, centerX, centerY);
+        this.drawAndroid16({
+            x: 0,
+            y: 0,
+            emotion: 'calm',
+            damage: 0.3,
+            scale: 3
+        });
         
-        // 기계적 손상 효과
-        this.drawMechanicalDamage(ctx, centerX, centerY);
+        // 배경: 흐릿한 잔디밭
+        this.drawBlurredBackground('#2a5c2a', '#1e421e');
+        
+        // 기계적 스파크 효과
+        this.addSparks(this.characters.android16.x, this.characters.android16.y);
     }
     
-    drawScene3(ctx, width, height, centerX, centerY) {
-        // 셀의 발 차기 장면
-        this.drawCellAttack(ctx, centerX, centerY);
+    renderScene3() {
+        // 셀의 발 클로즈업
+        this.drawCellFoot({
+            x: 0,
+            y: 50,
+            scale: 2.5
+        });
         
-        // 충격파 효과
-        this.drawShockwave(ctx, centerX, centerY, width, height);
-    }
-    
-    drawScene4(ctx, width, height, centerX, centerY) {
-        // 오반의 눈 클로즈업
-        this.drawGohanEyes(ctx, centerX, centerY);
-        
-        // 배경 붉어짐 효과
-        this.drawRedBackgroundEffect(ctx, width, height);
-    }
-    
-    drawScene5(ctx, width, height, centerX, centerY) {
-        // 오반의 얼굴 클로즈업 (침묵)
-        this.drawGohanSilent(ctx, centerX, centerY);
-        
-        // 눈물 효과
-        this.drawTearEffect(ctx, centerX, centerY);
-    }
-    
-    drawScene6(ctx, width, height, centerX, centerY) {
-        // 오반의 폭발 장면
-        this.drawGohanExplosion(ctx, centerX, centerY);
-        
-        // 지면 갈라짐 효과
-        this.drawGroundCrack(ctx, width, height);
-        
-        // 오라 효과
-        this.drawAuraEffect(ctx, centerX, centerY);
-    }
-    
-    drawScene7(ctx, width, height, centerX, centerY) {
-        // 오공과 피콜로 반응
-        this.drawGokuAndPiccolo(ctx, centerX, centerY);
-    }
-    
-    drawScene8(ctx, width, height, centerX, centerY) {
-        // 초사이어인2 오반
-        this.drawSSJ2Gohan(ctx, centerX, centerY);
-        
-        // 번개 효과
-        this.drawLightningEffects(ctx, width, height);
-    }
-    
-    drawScene9(ctx, width, height, centerX, centerY) {
-        // 최종 장면 (암전)
-        this.drawFinalScene(ctx, centerX, centerY);
-    }
-    
-    drawStadium(ctx, width, height) {
-        // 경기장 바닥
-        ctx.fillStyle = '#8b7355';
-        ctx.fillRect(0, height * 0.6, width, height * 0.4);
-        
-        // 균열 효과
-        ctx.strokeStyle = '#5d4037';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(width * 0.2, height * 0.7);
-        ctx.lineTo(width * 0.8, height * 0.7);
-        ctx.moveTo(width * 0.5, height * 0.65);
-        ctx.lineTo(width * 0.5, height * 0.9);
-        ctx.stroke();
-        
-        // 파편 효과
-        this.drawDebris(ctx, width, height);
-    }
-    
-    drawGohanScene1(ctx, centerX, centerY) {
-        // 오반 기본 도형 구조
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.002;
-        
-        // 얼굴 (타원형, 부드러운 턱선)
-        ctx.fillStyle = '#f8d7a6';
-        ctx.beginPath();
-        ctx.ellipse(centerX, centerY - 30, 40 * scale, 50 * scale, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 머리카락 (검정색, 약간 흐트러짐)
-        ctx.fillStyle = '#000';
-        this.drawGohanHair(ctx, centerX, centerY - 30, scale);
-        
-        // 눈 (평소 상태: 크고 동그란)
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(centerX - 15 * scale, centerY - 30, 8 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 15 * scale, centerY - 30, 8 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 동공
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(centerX - 15 * scale, centerY - 32, 3 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 15 * scale, centerY - 32, 3 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 눈썹 (완만한 아치형)
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3 * scale;
-        ctx.beginPath();
-        ctx.moveTo(centerX - 25 * scale, centerY - 45);
-        ctx.quadraticCurveTo(centerX - 15 * scale, centerY - 50, centerX - 5 * scale, centerY - 45);
-        ctx.moveTo(centerX + 5 * scale, centerY - 45);
-        ctx.quadraticCurveTo(centerX + 15 * scale, centerY - 50, centerX + 25 * scale, centerY - 45);
-        ctx.stroke();
-        
-        // 입 (내향적, 입꼬리 살짝 내려감)
-        ctx.strokeStyle = '#8b4513';
-        ctx.lineWidth = 2 * scale;
-        ctx.beginPath();
-        ctx.moveTo(centerX - 10 * scale, centerY - 10);
-        ctx.quadraticCurveTo(centerX, centerY - 5, centerX + 10 * scale, centerY - 10);
-        ctx.stroke();
-        
-        // 도복 상의 (보라색)
-        ctx.fillStyle = '#8a2be2'; // 보라색
-        ctx.beginPath();
-        ctx.moveTo(centerX - 60 * scale, centerY - 30);
-        ctx.lineTo(centerX - 40 * scale, centerY + 40);
-        ctx.lineTo(centerX + 40 * scale, centerY + 40);
-        ctx.lineTo(centerX + 60 * scale, centerY - 30);
-        ctx.closePath();
-        ctx.fill();
-        
-        // 브이넥 라인
-        ctx.strokeStyle = '#6a1b9a';
-        ctx.lineWidth = 2 * scale;
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY - 20);
-        ctx.lineTo(centerX, centerY + 20);
-        ctx.stroke();
-        
-        // 띠 (파란색 - 주황색 절대 아님)
-        ctx.fillStyle = '#0000ff'; // 파란색
-        ctx.fillRect(centerX - 45 * scale, centerY + 30, 90 * scale, 15 * scale);
-        
-        // 손 (떨리는 주먹)
-        ctx.fillStyle = '#f8d7a6';
-        ctx.beginPath();
-        ctx.arc(centerX - 70 * scale, centerY, 15 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 70 * scale, centerY, 15 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 상처와 먼지 효과
-        this.drawBattleDamage(ctx, centerX, centerY, scale);
-    }
-    
-    drawGohanHair(ctx, x, y, scale) {
-        // 오반의 전형적인 머리스타일
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        
-        // 정수리 부분
-        ctx.moveTo(x - 45 * scale, y - 40);
-        ctx.quadraticCurveTo(x - 20 * scale, y - 80, x, y - 60);
-        ctx.quadraticCurveTo(x + 20 * scale, y - 80, x + 45 * scale, y - 40);
-        
-        // 측면
-        ctx.lineTo(x + 50 * scale, y - 20);
-        ctx.lineTo(x - 50 * scale, y - 20);
-        ctx.closePath();
-        ctx.fill();
-        
-        // 앞머리 가닥들
-        for(let i = 0; i < 5; i++) {
-            const offset = i * 10 - 20;
-            ctx.beginPath();
-            ctx.moveTo(x + offset * scale, y - 60);
-            ctx.quadraticCurveTo(x + (offset - 5) * scale, y - 70, x + offset * scale, y - 80);
-            ctx.stroke();
+        // 안드로이드 16호 파괴 애니메이션
+        if (this.state.sceneProgress > 0.5) {
+            this.drawAndroid16Destruction();
         }
     }
     
-    drawAndroid16(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.0015;
+    renderScene4() {
+        // 손오반 눈동자 클로즈업
+        this.drawGohanEye({
+            x: 0,
+            y: 0,
+            emotion: 'shock',
+            scale: 5
+        });
         
-        // 얼굴 (사각형 구조)
-        ctx.fillStyle = '#b0bec5';
+        // 배경 색상 변화
+        const redIntensity = this.state.sceneProgress * 100;
+        this.ctx.fillStyle = `rgba(139, 0, 0, ${0.3 * this.state.sceneProgress})`;
+        this.ctx.fillRect(-1000, -1000, 2000, 2000);
+        
+        // 비둘기 상징 컷
+        if (this.state.sceneProgress > 0.3 && this.state.sceneProgress < 0.4) {
+            this.drawDoveSymbol();
+        }
+    }
+    
+    renderScene5() {
+        // 손오반 얼굴 클로즈업 (무음)
+        this.drawGohanFace({
+            x: 0,
+            y: 0,
+            emotion: 'silent_rage',
+            tears: true,
+            scale: 4
+        });
+        
+        // 미세한 표정 변화
+        const tremble = Math.sin(this.state.time * 0.01) * 0.5;
+        this.state.camera.x += tremble;
+        this.state.camera.y += tremble * 0.5;
+    }
+    
+    renderScene6() {
+        // 폭발 장면
+        this.drawExplosion();
+        
+        // 손오반 오라 변환
+        this.drawTransformationAura();
+        
+        // 땅 갈라짐 효과
+        this.drawGroundCracks();
+        
+        // 카메라 흔들림
+        this.shakeCamera(10, 1000);
+    }
+    
+    // ============================================
+    // 6. 캐릭터 드로잉 함수
+    // ============================================
+    
+    drawGohan(params) {
+        const { x, y, emotion, scale = 1 } = params;
+        const ctx = this.ctx;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        
+        // 얼굴 구조 (타원형)
+        ctx.fillStyle = '#f5d5b0'; // 살색
         ctx.beginPath();
-        ctx.roundRect(centerX - 60 * scale, centerY - 80, 120 * scale, 160 * scale, [20]);
+        ctx.ellipse(0, 0, 30, 40, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // 이마 보호대
-        ctx.fillStyle = '#78909c';
-        ctx.fillRect(centerX - 50 * scale, centerY - 85, 100 * scale, 20 * scale);
+        // 감정에 따른 눈 렌더링
+        switch(emotion) {
+            case 'defeated':
+                this.drawGohanEyesDefeated();
+                break;
+            case 'shock':
+                this.drawGohanEyesShock();
+                break;
+            case 'silent_rage':
+                this.drawGohanEyesRage();
+                break;
+            case 'transformed':
+                this.drawGohanEyesTransformed();
+                break;
+        }
         
-        // 눈 (작고 깊게 박힘)
-        ctx.fillStyle = '#ff0000';
+        // 감정에 따른 입 렌더링
+        this.drawGohanMouth(emotion);
+        
+        // 머리카락 (감정에 따라 변화)
+        this.drawGohanHair(emotion);
+        
+        // 복장 (너덜너덜한 도복)
+        this.drawGohanClothing(emotion);
+        
+        // 오라 효과
+        if (this.characters.gohan.aura.intensity > 0) {
+            this.drawAuraEffect(x, y, this.characters.gohan.aura);
+        }
+        
+        ctx.restore();
+    }
+    
+    drawGohanEyesDefeated() {
+        const ctx = this.ctx;
+        
+        // 처진 눈매
+        ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.arc(centerX - 25 * scale, centerY - 30, 15 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 25 * scale, centerY - 30, 15 * scale, 0, Math.PI * 2);
+        ctx.ellipse(-10, -10, 8, 6, 0.1, 0, Math.PI * 2);
+        ctx.ellipse(10, -10, 8, 6, -0.1, 0, Math.PI * 2);
         ctx.fill();
         
-        // 동공
+        // 동공 (아래로 향함)
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.arc(-10, -8, 3, 0, Math.PI * 2);
+        ctx.arc(10, -8, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 눈가의 그림자 (피로감)
+        ctx.strokeStyle = 'rgba(139, 0, 0, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(-10, -10, 9, 0.5, Math.PI - 0.5);
+        ctx.arc(10, -10, 9, Math.PI + 0.5, -0.5, true);
+        ctx.stroke();
+    }
+    
+    drawGohanEyesRage() {
+        const ctx = this.ctx;
+        
+        // 날카롭게 찢어진 눈
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        // 왼쪽 눈
+        ctx.moveTo(-18, -15);
+        ctx.lineTo(-2, -5);
+        ctx.lineTo(-18, 5);
+        ctx.closePath();
+        // 오른쪽 눈
+        ctx.moveTo(18, -15);
+        ctx.lineTo(2, -5);
+        ctx.lineTo(18, 5);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 좁아진 동공
         ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.arc(centerX - 25 * scale, centerY - 30, 8 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 25 * scale, centerY - 30, 8 * scale, 0, Math.PI * 2);
+        ctx.ellipse(-10, -5, 1.5, 2, 0.3, 0, Math.PI * 2);
+        ctx.ellipse(10, -5, 1.5, 2, -0.3, 0, Math.PI * 2);
         ctx.fill();
         
-        // 눈썹 (굵고 중립적)
-        ctx.fillStyle = '#37474f';
-        ctx.fillRect(centerX - 40 * scale, centerY - 50, 30 * scale, 8 * scale);
-        ctx.fillRect(centerX + 10 * scale, centerY - 50, 30 * scale, 8 * scale);
-        
-        // 입 (직선, 무표정)
-        ctx.strokeStyle = '#37474f';
-        ctx.lineWidth = 4 * scale;
+        // 눈썹 (안쪽으로 모임)
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(centerX - 30 * scale, centerY + 20);
-        ctx.lineTo(centerX + 30 * scale, centerY + 20);
+        ctx.moveTo(-20, -18);
+        ctx.lineTo(-8, -12);
+        ctx.moveTo(20, -18);
+        ctx.lineTo(8, -12);
+        ctx.stroke();
+    }
+    
+    drawAndroid16(params) {
+        const { x, y, emotion, damage, scale = 1 } = params;
+        const ctx = this.ctx;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        
+        // 얼굴 구조 (사각형)
+        ctx.fillStyle = '#2a2a2a'; // 어두운 금속색
+        ctx.beginPath();
+        ctx.roundRect(-25, -30, 50, 60, 5);
+        ctx.fill();
+        
+        // 기계적 디테일
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        // 이마 라인
+        ctx.moveTo(-20, -25);
+        ctx.lineTo(20, -25);
+        // 광대 라인
+        ctx.moveTo(-25, -10);
+        ctx.lineTo(25, -10);
+        // 턱 라인
+        ctx.moveTo(-15, 20);
+        ctx.lineTo(15, 20);
         ctx.stroke();
         
-        // 기계적 접합부
-        ctx.strokeStyle = '#546e7a';
-        ctx.lineWidth = 2 * scale;
+        // 눈 (작고 깊게 박힘)
+        ctx.fillStyle = '#c00'; // 붉은 눈
         ctx.beginPath();
-        ctx.moveTo(centerX - 60 * scale, centerY - 20);
-        ctx.lineTo(centerX + 60 * scale, centerY - 20);
-        ctx.moveTo(centerX - 60 * scale, centerY + 40);
-        ctx.lineTo(centerX + 60 * scale, centerY + 40);
+        ctx.arc(-10, -15, 4, 0, Math.PI * 2);
+        ctx.arc(10, -15, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 눈동자 (고정적)
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath();
+        ctx.arc(-10, -15, 1.5, 0, Math.PI * 2);
+        ctx.arc(10, -15, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 입 (직선형)
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-8, 10);
+        ctx.lineTo(8, 10);
         ctx.stroke();
         
         // 손상 효과
-        ctx.strokeStyle = '#ff6b6b';
-        ctx.lineWidth = 3 * scale;
-        ctx.beginPath();
-        ctx.moveTo(centerX + 50 * scale, centerY - 60);
-        ctx.lineTo(centerX + 70 * scale, centerY - 40);
-        ctx.lineTo(centerX + 60 * scale, centerY - 20);
-        ctx.stroke();
-    }
-    
-    drawCellAttack(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.0012;
-        
-        // 셀의 발
-        ctx.fillStyle = '#81c784';
-        ctx.beginPath();
-        
-        // 발바닥
-        ctx.moveTo(centerX - 100 * scale, centerY + 50);
-        ctx.lineTo(centerX - 80 * scale, centerY + 100);
-        ctx.lineTo(centerX + 80 * scale, centerY + 100);
-        ctx.lineTo(centerX + 100 * scale, centerY + 50);
-        
-        // 발등
-        ctx.quadraticCurveTo(centerX, centerY - 50, centerX - 100 * scale, centerY + 50);
-        ctx.closePath();
-        ctx.fill();
-        
-        // 발톱
-        ctx.fillStyle = '#4caf50';
-        for(let i = 0; i < 3; i++) {
-            const x = centerX - 40 * scale + i * 40 * scale;
-            ctx.beginPath();
-            ctx.moveTo(x, centerY + 100);
-            ctx.lineTo(x - 10 * scale, centerY + 130);
-            ctx.lineTo(x + 10 * scale, centerY + 130);
-            ctx.closePath();
-            ctx.fill();
+        if (damage > 0) {
+            this.drawDamageEffects(damage);
         }
         
-        // 셀의 얼굴 (위쪽에 약간 보임)
-        this.drawCellFace(ctx, centerX, centerY - 150, scale * 0.8);
+        ctx.restore();
     }
     
-    drawCellFace(ctx, x, y, scale) {
-        // 얼굴 기반색
-        ctx.fillStyle = '#81c784';
+    drawCellFoot(params) {
+        const { x, y, scale = 1 } = params;
+        const ctx = this.ctx;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        
+        // 셀의 다리 (곤충형)
+        ctx.fillStyle = '#1a5c1a'; // 녹색 계열
         ctx.beginPath();
-        ctx.ellipse(x, y, 50 * scale, 60 * scale, 0, 0, Math.PI * 2);
+        // 허벅지
+        ctx.ellipse(0, -40, 35, 50, 0, 0, Math.PI * 2);
+        // 종아리
+        ctx.ellipse(0, 30, 25, 40, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // 뿔
-        ctx.fillStyle = '#4caf50';
-        ctx.beginPath();
-        ctx.moveTo(x - 10 * scale, y - 60 * scale);
-        ctx.lineTo(x, y - 100 * scale);
-        ctx.lineTo(x + 10 * scale, y - 60 * scale);
-        ctx.closePath();
-        ctx.fill();
-        
-        // 눈 (반쯤 뜬 상태, 비웃는 듯한)
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(x - 20 * scale, y - 10, 12 * scale, 0, Math.PI * 2);
-        ctx.arc(x + 20 * scale, y - 10, 12 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 동공 (작고 날카로운)
-        ctx.fillStyle = '#ffeb3b';
-        ctx.beginPath();
-        ctx.arc(x - 20 * scale, y - 12, 4 * scale, 0, Math.PI * 2);
-        ctx.arc(x + 20 * scale, y - 12, 4 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 입 (비대칭 미소)
-        ctx.strokeStyle = '#4caf50';
-        ctx.lineWidth = 4 * scale;
-        ctx.beginPath();
-        ctx.moveTo(x - 25 * scale, y + 20);
-        ctx.quadraticCurveTo(x - 10 * scale, y + 30, x + 5 * scale, y + 25);
-        ctx.stroke();
-    }
-    
-    drawGohanEyes(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.001;
-        
-        // 눈 클로즈업
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(centerX - 40 * scale, centerY, 50 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 40 * scale, centerY, 50 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 흰자
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(centerX - 40 * scale, centerY, 45 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 40 * scale, centerY, 45 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 홍채 (격렬하게 흔들리는 효과)
-        const time = Date.now() * 0.01;
-        const shakeX = Math.sin(time) * 5;
-        const shakeY = Math.cos(time * 0.7) * 3;
-        
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(centerX - 40 * scale + shakeX, centerY + shakeY, 25 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 40 * scale + shakeX, centerY + shakeY, 25 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 동공 (축소된 상태)
-        ctx.fillStyle = '#ff6b6b';
-        ctx.beginPath();
-        ctx.arc(centerX - 40 * scale + shakeX, centerY + shakeY, 10 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 40 * scale + shakeX, centerY + shakeY, 10 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 눈물 (눈가에 맺힌)
-        ctx.fillStyle = 'rgba(100, 150, 255, 0.3)';
-        ctx.beginPath();
-        ctx.arc(centerX - 40 * scale, centerY + 35 * scale, 5 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 40 * scale, centerY + 35 * scale, 5 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 피 (이마에서 흐르는)
-        ctx.strokeStyle = '#ff0000';
-        ctx.lineWidth = 3 * scale;
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY - 60 * scale);
-        ctx.quadraticCurveTo(centerX + 10 * scale, centerY - 40 * scale, centerX + 20 * scale, centerY - 20 * scale);
-        ctx.stroke();
-    }
-    
-    drawGohanSilent(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.001;
-        
-        // 얼굴 전체 클로즈업
-        ctx.fillStyle = '#f8d7a6';
-        ctx.beginPath();
-        ctx.ellipse(centerX, centerY, 100 * scale, 120 * scale, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 눈 (고정된 시선)
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(centerX - 40 * scale, centerY - 10, 25 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 40 * scale, centerY - 10, 25 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 눈동자 (안정된 상태)
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(centerX - 40 * scale, centerY - 12, 8 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 40 * scale, centerY - 12, 8 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 눈썹 (모인 상태)
-        ctx.fillStyle = '#000';
-        ctx.fillRect(centerX - 60 * scale, centerY - 40, 40 * scale, 8 * scale);
-        ctx.fillRect(centerX + 20 * scale, centerY - 40, 40 * scale, 8 * scale);
-        
-        // 입 (굳게 다문)
-        ctx.strokeStyle = '#8b4513';
-        ctx.lineWidth = 4 * scale;
-        ctx.beginPath();
-        ctx.moveTo(centerX - 30 * scale, centerY + 40);
-        ctx.lineTo(centerX + 30 * scale, centerY + 40);
-        ctx.stroke();
-        
-        // 주름 (이마와 눈가)
-        ctx.strokeStyle = '#d4a76a';
-        ctx.lineWidth = 2 * scale;
-        ctx.beginPath();
-        // 이마 주름
-        for(let i = 0; i < 3; i++) {
-            const y = centerY - 50 + i * 5;
-            ctx.moveTo(centerX - 20 * scale, y);
-            ctx.lineTo(centerX + 20 * scale, y);
-        }
-        // 눈가 주름
-        ctx.moveTo(centerX - 60 * scale, centerY - 20);
-        ctx.lineTo(centerX - 45 * scale, centerY - 15);
-        ctx.moveTo(centerX + 60 * scale, centerY - 20);
-        ctx.lineTo(centerX + 45 * scale, centerY - 15);
-        ctx.stroke();
-    }
-    
-    drawTearEffect(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.001;
-        const time = Date.now() * 0.001;
-        
-        // 눈물 생성 (랜덤한 타이밍)
-        if(Math.sin(time) > 0.9) {
-            const tearX = centerX - 40 * scale + (Math.random() * 20 - 10);
-            const tearY = centerY - 10;
-            
-            // 눈물 방울
-            ctx.fillStyle = 'rgba(100, 150, 255, 0.8)';
-            ctx.beginPath();
-            ctx.ellipse(tearX, tearY, 3 * scale, 5 * scale, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 눈물 흔적
-            ctx.strokeStyle = 'rgba(100, 150, 255, 0.5)';
-            ctx.lineWidth = 1 * scale;
-            ctx.beginPath();
-            ctx.moveTo(tearX, tearY);
-            ctx.lineTo(tearX, tearY + 30);
-            ctx.stroke();
-        }
-    }
-    
-    drawGohanExplosion(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.001;
-        const time = Date.now() * 0.01;
-        
-        // 폭발하는 오라 (황금색)
-        const gradient = ctx.createRadialGradient(
-            centerX, centerY, 0,
-            centerX, centerY, 200 * scale
-        );
-        gradient.addColorStop(0, '#ffff00');
-        gradient.addColorStop(0.3, '#ffcc00');
-        gradient.addColorStop(0.6, '#ff6600');
-        gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
-        
-        // 오라 펄스 효과
-        const pulse = Math.sin(time) * 0.2 + 0.8;
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 150 * scale * pulse, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 초사이어인 오반
-        this.drawSSJGohan(ctx, centerX, centerY, scale);
-        
-        // 에너지 빔 (파란색 번개)
-        for(let i = 0; i < 8; i++) {
-            const angle = (i / 8) * Math.PI * 2 + time * 0.1;
-            const length = 100 + Math.sin(time + i) * 50;
-            
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 3 * scale;
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(
-                centerX + Math.cos(angle) * length * scale,
-                centerY + Math.sin(angle) * length * scale
-            );
-            ctx.stroke();
-        }
-    }
-    
-    drawSSJGohan(ctx, centerX, centerY, scale) {
-        // 얼굴 (분노 표정)
-        ctx.fillStyle = '#f8d7a6';
-        ctx.beginPath();
-        ctx.ellipse(centerX, centerY, 50 * scale, 60 * scale, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 머리카락 (금색, 뾰족하게)
-        ctx.fillStyle = '#ffcc00';
-        this.drawSSJHair(ctx, centerX, centerY - 40, scale);
-        
-        // 눈 (날카롭게 찢어진)
-        ctx.fillStyle = '#00aaff';
-        ctx.beginPath();
-        // 좌측 눈
-        ctx.moveTo(centerX - 30 * scale, centerY - 15);
-        ctx.lineTo(centerX - 45 * scale, centerY - 10);
-        ctx.lineTo(centerX - 30 * scale, centerY + 5);
-        ctx.lineTo(centerX - 15 * scale, centerY);
-        ctx.closePath();
-        // 우측 눈
-        ctx.moveTo(centerX + 15 * scale, centerY);
-        ctx.lineTo(centerX + 30 * scale, centerY + 5);
-        ctx.lineTo(centerX + 45 * scale, centerY - 10);
-        ctx.lineTo(centerX + 30 * scale, centerY - 15);
-        ctx.closePath();
-        ctx.fill();
-        
-        // 눈동자 (파란색 빛남)
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(centerX - 22 * scale, centerY - 5, 8 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 22 * scale, centerY - 5, 8 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 눈썹 (안쪽으로 강하게 모임)
-        ctx.fillStyle = '#000';
-        ctx.fillRect(centerX - 50 * scale, centerY - 25, 35 * scale, 6 * scale);
-        ctx.fillRect(centerX + 15 * scale, centerY - 25, 35 * scale, 6 * scale);
-        
-        // 입 (포효)
-        ctx.fillStyle = '#ff0000';
-        ctx.beginPath();
-        ctx.ellipse(centerX, centerY + 25, 25 * scale, 15 * scale, 0, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
-    drawSSJHair(ctx, x, y, scale) {
-        // 초사이어인 머리: 뾰족하게 위로 솟음
-        ctx.fillStyle = '#ffcc00';
-        ctx.beginPath();
-        
-        // 중앙 가닥
-        ctx.moveTo(x - 25 * scale, y);
-        ctx.lineTo(x, y - 80 * scale);
-        ctx.lineTo(x + 25 * scale, y);
-        
-        // 좌측 가닥
-        ctx.lineTo(x - 10 * scale, y - 20);
-        ctx.lineTo(x - 40 * scale, y - 60 * scale);
-        ctx.lineTo(x - 25 * scale, y);
-        
-        // 우측 가닥
-        ctx.moveTo(x + 25 * scale, y);
-        ctx.lineTo(x + 10 * scale, y - 20);
-        ctx.lineTo(x + 40 * scale, y - 60 * scale);
-        ctx.lineTo(x + 25 * scale, y);
-        
-        ctx.closePath();
-        ctx.fill();
-        
-        // 빛나는 효과
-        const gradient = ctx.createLinearGradient(
-            x, y - 80 * scale,
-            x, y
-        );
-        gradient.addColorStop(0, '#ffff00');
-        gradient.addColorStop(1, '#ffcc00');
-        ctx.fillStyle = gradient;
-        ctx.fill();
-    }
-    
-    drawGokuAndPiccolo(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.0008;
-        
-        // 오공 (왼쪽)
-        this.drawGoku(ctx, centerX - 100 * scale, centerY, scale);
-        
-        // 피콜로 (오른쪽)
-        this.drawPiccolo(ctx, centerX + 100 * scale, centerY, scale);
-        
-        // 놀란 표정 효과
-        const time = Date.now() * 0.01;
-        const shake = Math.sin(time * 5) * 3;
-        
-        // "오반!!" 텍스트 효과
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `${40 * scale}px 'Noto Sans KR'`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.shadowColor = '#ff0000';
-        ctx.shadowBlur = 20;
-        ctx.fillText("오반!!", centerX, centerY - 100 + shake);
-        ctx.shadowBlur = 0;
-    }
-    
-    drawGoku(ctx, x, y, scale) {
-        // 얼굴
-        ctx.fillStyle = '#f8d7a6';
-        ctx.beginPath();
-        ctx.arc(x, y, 40 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 머리카락 (초사이어인)
-        ctx.fillStyle = '#ffcc00';
-        this.drawGokuHair(ctx, x, y - 30 * scale, scale);
-        
-        // 눈 (동그란, 놀란 표정)
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(x - 15 * scale, y - 5, 12 * scale, 0, Math.PI * 2);
-        ctx.arc(x + 15 * scale, y - 5, 12 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 입 (벌어진)
-        ctx.fillStyle = '#8b4513';
-        ctx.beginPath();
-        ctx.ellipse(x, y + 20 * scale, 15 * scale, 10 * scale, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 도복
-        ctx.fillStyle = '#ff6600';
-        ctx.fillRect(x - 30 * scale, y + 10 * scale, 60 * scale, 40 * scale);
-    }
-    
-    drawPiccolo(ctx, x, y, scale) {
-        // 얼굴 (녹색)
-        ctx.fillStyle = '#2e7d32';
-        ctx.beginPath();
-        ctx.ellipse(x, y, 40 * scale, 50 * scale, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 뿔 (두 개)
-        ctx.fillStyle = '#1b5e20';
-        for(let i = -1; i <= 1; i += 2) {
-            ctx.beginPath();
-            ctx.moveTo(x + i * 10 * scale, y - 40 * scale);
-            ctx.lineTo(x + i * 25 * scale, y - 70 * scale);
-            ctx.lineTo(x + i * 5 * scale, y - 40 * scale);
-            ctx.closePath();
-            ctx.fill();
-        }
-        
-        // 눈 (날카로운)
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.moveTo(x - 25 * scale, y - 10);
-        ctx.lineTo(x - 10 * scale, y - 5);
-        ctx.lineTo(x - 25 * scale, y);
-        ctx.closePath();
-        
-        ctx.moveTo(x + 10 * scale, y - 5);
-        ctx.lineTo(x + 25 * scale, y);
-        ctx.lineTo(x + 25 * scale, y - 10);
-        ctx.closePath();
-        ctx.fill();
-        
-        // 입 (찌푸린)
-        ctx.strokeStyle = '#1b5e20';
-        ctx.lineWidth = 3 * scale;
-        ctx.beginPath();
-        ctx.moveTo(x - 20 * scale, y + 25);
-        ctx.lineTo(x + 20 * scale, y + 25);
-        ctx.stroke();
-        
-        // 로브
-        ctx.fillStyle = '#8bc34a';
-        ctx.fillRect(x - 35 * scale, y + 15 * scale, 70 * scale, 50 * scale);
-    }
-    
-    drawSSJ2Gohan(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.001;
-        const time = Date.now() * 0.01;
-        
-        // 초사이어인2 머리카락 (더 길고 뾰족함)
-        ctx.fillStyle = '#ffff00';
-        this.drawSSJ2Hair(ctx, centerX, centerY - 50, scale, time);
-        
-        // 얼굴 (냉정한 분노)
-        ctx.fillStyle = '#f8d7a6';
-        ctx.beginPath();
-        ctx.ellipse(centerX, centerY, 50 * scale, 60 * scale, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 눈 (차갑고 매서움)
-        ctx.fillStyle = '#00aaff';
-        ctx.beginPath();
-        // 더 날카롭게 각진 눈
-        ctx.moveTo(centerX - 35 * scale, centerY - 15);
-        ctx.lineTo(centerX - 50 * scale, centerY - 5);
-        ctx.lineTo(centerX - 35 * scale, centerY + 10);
-        ctx.lineTo(centerX - 20 * scale, centerY);
-        ctx.closePath();
-        
-        ctx.moveTo(centerX + 20 * scale, centerY);
-        ctx.lineTo(centerX + 35 * scale, centerY + 10);
-        ctx.lineTo(centerX + 50 * scale, centerY - 5);
-        ctx.lineTo(centerX + 35 * scale, centerY - 15);
-        ctx.closePath();
-        ctx.fill();
-        
-        // 눈동자 (빛나는)
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(centerX - 27 * scale, centerY - 2, 6 * scale, 0, Math.PI * 2);
-        ctx.arc(centerX + 27 * scale, centerY - 2, 6 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 눈썹 (더 날카롭게)
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.moveTo(centerX - 60 * scale, centerY - 30);
-        ctx.lineTo(centerX - 25 * scale, centerY - 35);
-        ctx.lineTo(centerX - 60 * scale, centerY - 40);
-        ctx.closePath();
-        
-        ctx.moveTo(centerX + 25 * scale, centerY - 35);
-        ctx.lineTo(centerX + 60 * scale, centerY - 30);
-        ctx.lineTo(centerX + 60 * scale, centerY - 40);
-        ctx.closePath();
-        ctx.fill();
-        
-        // 입 (단호함)
-        ctx.strokeStyle = '#8b4513';
-        ctx.lineWidth = 3 * scale;
-        ctx.beginPath();
-        ctx.moveTo(centerX - 20 * scale, centerY + 35);
-        ctx.lineTo(centerX + 20 * scale, centerY + 35);
-        ctx.stroke();
-        
-        // 오라 (더 강력한)
-        const gradient = ctx.createRadialGradient(
-            centerX, centerY, 0,
-            centerX, centerY, 250 * scale
-        );
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(0.2, '#ffff00');
-        gradient.addColorStop(0.5, '#ff6600');
-        gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
-        
-        ctx.globalAlpha = 0.7;
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 200 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1.0;
-        
-        // 번개 효과
-        this.drawLightning(ctx, centerX, centerY, scale, time);
-    }
-    
-    drawSSJ2Hair(ctx, x, y, scale, time) {
-        // 초사이어인2 머리: 더 길고 뾰족하며 움직이는 효과
-        ctx.fillStyle = '#ffff00';
-        
-        // 중앙 가닥 (가장 길게)
-        ctx.beginPath();
-        ctx.moveTo(x - 15 * scale, y);
-        ctx.lineTo(x, y - 120 * scale + Math.sin(time) * 5);
-        ctx.lineTo(x + 15 * scale, y);
-        ctx.closePath();
-        ctx.fill();
-        
-        // 측면 가닥들
-        for(let i = -1; i <= 1; i += 2) {
-            ctx.beginPath();
-            ctx.moveTo(x + i * 25 * scale, y - 10);
-            ctx.lineTo(x + i * 40 * scale, y - 90 * scale + Math.sin(time + i) * 5);
-            ctx.lineTo(x + i * 15 * scale, y - 30);
-            ctx.closePath();
-            ctx.fill();
-            
-            // 뒤쪽 가닥
-            ctx.beginPath();
-            ctx.moveTo(x + i * 10 * scale, y);
-            ctx.lineTo(x + i * 30 * scale, y - 70 * scale + Math.cos(time + i) * 5);
-            ctx.lineTo(x + i * 0, y - 20);
-            ctx.closePath();
-            ctx.fill();
-        }
-        
-        // 빛나는 효과
-        const gradient = ctx.createLinearGradient(
-            x, y - 120 * scale,
-            x, y
-        );
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(0.3, '#ffff00');
-        gradient.addColorStop(1, '#ffcc00');
-        ctx.fillStyle = gradient;
-        ctx.fill();
-    }
-    
-    drawLightning(ctx, centerX, centerY, scale, time) {
-        // 번개 효과 그리기
-        for(let i = 0; i < 5; i++) {
-            const angle = (i / 5) * Math.PI * 2 + time * 0.05;
-            const length = 150 + Math.sin(time + i) * 50;
-            
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 2 * scale;
-            ctx.lineCap = 'round';
-            
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            
-            // 번개 패스 생성
-            let x = centerX;
-            let y = centerY;
-            const segments = 8;
-            
-            for(let j = 0; j < segments; j++) {
-                const segmentLength = length / segments;
-                const segmentAngle = angle + (Math.random() - 0.5) * 0.5;
-                
-                x += Math.cos(segmentAngle) * segmentLength * scale;
-                y += Math.sin(segmentAngle) * segmentLength * scale;
-                
-                ctx.lineTo(x, y);
-            }
-            
-            ctx.stroke();
-            
-            // 번개 끝 빛나는 효과
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(x, y, 5 * scale, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-    
-    drawFinalScene(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.001;
-        const time = Date.now() * 0.001;
-        
-        // 점점 어두워지는 효과
-        const fade = Math.max(0, 1 - time % 2);
-        ctx.fillStyle = `rgba(0, 0, 0, ${1 - fade * 0.5})`;
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        
-        // 마지막으로 보이는 오반의 눈
-        if(fade > 0.3) {
-            ctx.fillStyle = '#00aaff';
-            ctx.beginPath();
-            ctx.arc(centerX - 20 * scale, centerY, 15 * scale * fade, 0, Math.PI * 2);
-            ctx.arc(centerX + 20 * scale, centerY, 15 * scale * fade, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 마지막 빛줄기
-            ctx.strokeStyle = `rgba(255, 255, 255, ${fade})`;
-            ctx.lineWidth = 2 * scale;
-            ctx.beginPath();
-            ctx.moveTo(centerX + 25 * scale, centerY - 5);
-            ctx.lineTo(centerX + 40 * scale, centerY - 20 * fade);
-            ctx.stroke();
-        }
-    }
-    
-    drawSceneEffects(ctx, width, height) {
-        const scene = this.scenes[this.currentScene];
-        const time = Date.now() * 0.001;
-        
-        // 씬별 특수 효과
-        switch(this.currentScene) {
-            case 0: // 먼지 입자
-                this.drawFloatingDust(ctx, width, height, time);
-                break;
-            case 1: // 기계 스파크
-                this.drawSparks(ctx, width * 0.5, height * 0.5, time);
-                break;
-            case 2: // 충격파
-                this.drawImpactWave(ctx, width * 0.5, height * 0.5, time);
-                break;
-            case 3: // 붉은 안개
-                this.drawRedMist(ctx, width, height, time);
-                break;
-            case 5: // 지진 효과
-                this.drawScreenShake(ctx, width, height, time);
-                break;
-            case 7: // 전기 스파크
-                this.drawElectricSparks(ctx, width, height, time);
-                break;
-        }
-    }
-    
-    drawFloatingDust(ctx, width, height, time) {
-        // 떠다니는 먼지 입자
-        for(let i = 0; i < 30; i++) {
-            const x = (Math.sin(time + i) * 0.5 + 0.5) * width;
-            const y = (time * 20 + i * 50) % height;
-            const size = 2 + Math.sin(time + i) * 1;
-            
-            ctx.fillStyle = `rgba(200, 200, 200, ${0.3 + Math.sin(time + i) * 0.2})`;
-            ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-    
-    drawSparks(ctx, x, y, time) {
-        // 기계적 스파크 효과
-        for(let i = 0; i < 5; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const distance = 20 + Math.random() * 30;
-            const sparkX = x + Math.cos(angle) * distance;
-            const sparkY = y + Math.sin(angle) * distance;
-            
-            ctx.fillStyle = '#ffff00';
-            ctx.beginPath();
-            ctx.arc(sparkX, sparkY, 2, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 꼬리 효과
-            ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(sparkX, sparkY);
-            ctx.lineTo(
-                sparkX - Math.cos(angle) * 10,
-                sparkY - Math.sin(angle) * 10
-            );
-            ctx.stroke();
-        }
-    }
-    
-    drawImpactWave(ctx, x, y, time) {
-        // 충격파 원형 효과
-        const radius = 50 + (time % 1) * 100;
-        const alpha = 1 - (time % 1);
-        
-        ctx.strokeStyle = `rgba(255, 100, 100, ${alpha})`;
+        // 관절 디테일
+        ctx.strokeStyle = '#0f3d0f';
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        // 무릎
+        ctx.arc(0, 0, 20, 0, Math.PI * 2);
+        // 관절 라인
+        for (let i = 0; i < 3; i++) {
+            const angle = (Math.PI * 2 / 3) * i;
+            ctx.moveTo(Math.cos(angle) * 20, Math.sin(angle) * 20);
+            ctx.lineTo(Math.cos(angle) * 35, Math.sin(angle) * 50);
+        }
         ctx.stroke();
+        
+        // 발톱
+        ctx.fillStyle = '#333';
+        for (let i = -1; i <= 1; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * 15, 70);
+            ctx.lineTo(i * 10, 90);
+            ctx.lineTo(i * 20, 90);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        ctx.restore();
     }
     
-    drawRedMist(ctx, width, height, time) {
-        // 붉은 안개 효과
-        const gradient = ctx.createLinearGradient(0, 0, width, 0);
-        gradient.addColorStop(0, 'rgba(255, 0, 0, 0.1)');
-        gradient.addColorStop(0.5, 'rgba(255, 0, 0, 0.3)');
-        gradient.addColorStop(1, 'rgba(255, 0, 0, 0.1)');
+    // ============================================
+    // 7. 효과 및 파티클 시스템
+    // ============================================
+    
+    drawAuraEffect(x, y, aura) {
+        const ctx = this.ctx;
+        const intensity = aura.intensity;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        
+        // 오라 외곽선 (빛나는 효과)
+        const gradient = ctx.createRadialGradient(0, 0, 20, 0, 0, 50 * intensity);
+        gradient.addColorStop(0, `${aura.color}${Math.floor(intensity * 255).toString(16).padStart(2, '0')}`);
+        gradient.addColorStop(1, `${aura.color}00`);
         
         ctx.fillStyle = gradient;
-        ctx.globalAlpha = 0.5 + Math.sin(time) * 0.3;
-        ctx.fillRect(0, 0, width, height);
-        ctx.globalAlpha = 1.0;
-    }
-    
-    drawScreenShake(ctx, width, height, time) {
-        // 화면 흔들림 효과
-        const shakeX = Math.sin(time * 10) * 5;
-        const shakeY = Math.cos(time * 8) * 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, 50 * intensity, 0, Math.PI * 2);
+        ctx.fill();
         
-        ctx.translate(shakeX, shakeY);
-    }
-    
-    drawElectricSparks(ctx, width, height, time) {
-        // 전기 스파크 전체화면 효과
-        for(let i = 0; i < 10; i++) {
-            const x = Math.random() * width;
-            const y = Math.random() * height;
-            const length = 20 + Math.random() * 30;
+        // 오라 내부 파티클
+        aura.particles.forEach(particle => {
+            const angle = particle.angle + this.state.time * 0.001;
+            const radius = 20 + particle.radiusOffset;
             
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 1;
+            ctx.fillStyle = particle.color;
             ctx.beginPath();
-            ctx.moveTo(x, y);
-            
-            for(let j = 0; j < 3; j++) {
-                const angle = Math.random() * Math.PI * 2;
-                ctx.lineTo(
-                    x + Math.cos(angle) * length,
-                    y + Math.sin(angle) * length
-                );
-            }
-            
-            ctx.stroke();
-        }
-    }
-    
-    drawBattleDamage(ctx, centerX, centerY, scale) {
-        // 상처와 먼지 효과
-        ctx.fillStyle = 'rgba(139, 69, 19, 0.3)';
-        for(let i = 0; i < 5; i++) {
-            const x = centerX - 30 + Math.random() * 60;
-            const y = centerY - 20 + Math.random() * 40;
-            const size = 5 + Math.random() * 10;
-            
-            ctx.beginPath();
-            ctx.arc(x, y, size * scale, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        // 상처 (붉은색)
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
-        for(let i = 0; i < 3; i++) {
-            const x = centerX - 20 + Math.random() * 40;
-            const y = centerY - 10 + Math.random() * 20;
-            
-            ctx.beginPath();
-            ctx.ellipse(x, y, 8 * scale, 3 * scale, Math.random() * Math.PI, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-    
-    drawDebris(ctx, width, height) {
-        // 파편 효과
-        ctx.fillStyle = '#795548';
-        for(let i = 0; i < 10; i++) {
-            const x = Math.random() * width;
-            const y = height * 0.7 + Math.random() * height * 0.2;
-            const size = 5 + Math.random() * 15;
-            
-            ctx.beginPath();
-            ctx.rect(x, y, size, size);
-            ctx.fill();
-        }
-    }
-    
-    drawGroundCrack(ctx, width, height) {
-        // 지면 갈라짐 효과
-        ctx.strokeStyle = '#5d4037';
-        ctx.lineWidth = 4;
-        
-        for(let i = 0; i < 5; i++) {
-            const startX = width * 0.2 + i * width * 0.15;
-            const startY = height * 0.7;
-            
-            ctx.beginPath();
-            ctx.moveTo(startX, startY);
-            
-            for(let j = 0; j < 3; j++) {
-                const x = startX + (Math.random() - 0.5) * 50;
-                const y = startY + (j + 1) * 30;
-                ctx.lineTo(x, y);
-            }
-            
-            ctx.stroke();
-        }
-    }
-    
-    drawAuraEffect(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.001;
-        const time = Date.now() * 0.01;
-        
-        // 오라 파동 효과
-        for(let i = 0; i < 3; i++) {
-            const radius = 80 * scale + i * 40 * scale + (time % 100) * 2;
-            const alpha = 0.7 - i * 0.2;
-            
-            const gradient = ctx.createRadialGradient(
-                centerX, centerY, 0,
-                centerX, centerY, radius
+            ctx.arc(
+                Math.cos(angle) * radius * intensity,
+                Math.sin(angle) * radius * intensity,
+                particle.size,
+                0, Math.PI * 2
             );
-            gradient.addColorStop(0, `rgba(255, 255, 0, ${alpha})`);
-            gradient.addColorStop(1, `rgba(255, 100, 0, 0)`);
-            
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
             ctx.fill();
-        }
+        });
+        
+        ctx.restore();
     }
     
-    drawRedBackgroundEffect(ctx, width, height) {
-        // 붉은 배경 그라데이션 효과
-        const gradient = ctx.createLinearGradient(0, 0, width, height);
-        gradient.addColorStop(0, '#801336');
-        gradient.addColorStop(0.5, '#c72c41');
-        gradient.addColorStop(1, '#ee4540');
+    drawExplosion() {
+        const ctx = this.ctx;
+        const progress = this.state.sceneProgress;
+        
+        // 폭발 중심
+        const centerX = this.characters.gohan.x;
+        const centerY = this.characters.gohan.y;
+        
+        // 충격파
+        const shockwaveRadius = progress * 300;
+        const gradient = ctx.createRadialGradient(
+            centerX, centerY, 0,
+            centerX, centerY, shockwaveRadius
+        );
+        gradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+        gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.4)');
+        gradient.addColorStop(1, 'rgba(139, 0, 0, 0)');
         
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
-        
-        // 핏빛 구름 효과
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
-        for(let i = 0; i < 5; i++) {
-            const x = Math.random() * width;
-            const y = Math.random() * height * 0.3;
-            const size = 50 + Math.random() * 100;
-            
-            ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-    
-    drawMechanicalDamage(ctx, centerX, centerY) {
-        const scale = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.001;
-        const time = Date.now() * 0.01;
-        
-        // 기계적 손상 (깨진 부분)
-        ctx.strokeStyle = '#ff6b6b';
-        ctx.lineWidth = 3 * scale;
-        
-        // 머리 부분 균열
         ctx.beginPath();
-        ctx.moveTo(centerX - 40 * scale, centerY - 60);
-        ctx.lineTo(centerX - 20 * scale, centerY - 40);
-        ctx.lineTo(centerX, centerY - 50);
-        ctx.stroke();
+        ctx.arc(centerX, centerY, shockwaveRadius, 0, Math.PI * 2);
+        ctx.fill();
         
-        // 전기 스파크 효과 (깜빡임)
-        if(Math.sin(time) > 0) {
-            const sparkX = centerX - 30 * scale;
-            const sparkY = centerY - 50;
-            
-            // 스파크 중심
-            ctx.fillStyle = '#ffff00';
-            ctx.beginPath();
-            ctx.arc(sparkX, sparkY, 3 * scale, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 스파크 줄기
-            for(let i = 0; i < 3; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const length = 10 + Math.random() * 20;
-                
-                ctx.strokeStyle = '#ffff00';
-                ctx.lineWidth = 1 * scale;
-                ctx.beginPath();
-                ctx.moveTo(sparkX, sparkY);
-                ctx.lineTo(
-                    sparkX + Math.cos(angle) * length * scale,
-                    sparkY + Math.sin(angle) * length * scale
-                );
-                ctx.stroke();
-            }
+        // 땅 갈라짐
+        if (progress > 0.2) {
+            this.drawGroundCracks(centerX, centerY, progress);
+        }
+        
+        // 흙먼지 파동
+        this.addDustWave(centerX, centerY, progress);
+    }
+    
+    addDustParticles() {
+        if (Math.random() < 0.3) {
+            this.state.particles.push({
+                x: (Math.random() - 0.5) * this.canvas.width,
+                y: (Math.random() - 0.5) * this.canvas.height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: Math.random() * -0.5,
+                radius: Math.random() * 3 + 1,
+                color: 'rgba(200, 180, 140, 0.5)',
+                life: 100 + Math.random() * 100
+            });
         }
     }
     
-    drawShockwave(ctx, centerX, centerY, width, height) {
-        const time = Date.now() * 0.01;
-        
-        // 충격파 원
-        const radius = 30 + (time % 1) * 200;
-        const alpha = 0.8 - (time % 1);
-        
-        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // 두 번째 충격파
-        if(radius > 100) {
-            const radius2 = radius - 100;
-            const alpha2 = alpha * 0.7;
-            
-            ctx.strokeStyle = `rgba(200, 200, 255, ${alpha2})`;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius2, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-        
-        // 먼지 기둥 효과
-        ctx.fillStyle = `rgba(139, 69, 19, ${alpha * 0.5})`;
-        for(let i = 0; i < 8; i++) {
-            const angle = (i / 8) * Math.PI * 2;
-            const x = centerX + Math.cos(angle) * radius;
-            const y = centerY + Math.sin(angle) * radius;
-            const height = 20 + Math.random() * 30;
-            
-            ctx.beginPath();
-            ctx.ellipse(x, y, 10, height, angle, 0, Math.PI * 2);
-            ctx.fill();
+    // ============================================
+    // 8. 사운드 및 진동 시스템
+    // ============================================
+    
+    playSceneAudio(sceneId) {
+        switch(sceneId) {
+            case 0: // 정적
+                this.audio.bgm.volume = 0;
+                break;
+            case 1: // 16호 대사
+                this.playDialogueAudio(this.scenes[1].dialogue);
+                break;
+            case 2: // 셀 공격
+                this.audio.sfxCell.currentTime = 0;
+                this.audio.sfxCell.volume = 0.7;
+                this.audio.sfxCell.play();
+                break;
+            case 5: // 오반 포효
+                setTimeout(() => {
+                    this.audio.sfxScream.currentTime = 0;
+                    this.audio.sfxScream.volume = 0.8;
+                    this.audio.sfxScream.play();
+                    this.shakeCamera(20, 2000);
+                }, 1000);
+                break;
+            case 6: // 변신
+                this.audio.sfxTransformation.currentTime = 0;
+                this.audio.sfxTransformation.volume = 0.6;
+                this.audio.sfxTransformation.play();
+                break;
         }
     }
     
-    animate() {
-        if(!this.isAnimating) return;
+    playDialogueAudio(dialogues) {
+        if (this.state.dialogueIndex < dialogues.length) {
+            const dialogue = dialogues[this.state.dialogueIndex];
+            
+            // 대사 표시
+            this.showDialogue(dialogue.speaker, dialogue.text);
+            
+            // 다음 대사 예약
+            setTimeout(() => {
+                this.state.dialogueIndex++;
+                this.playDialogueAudio(dialogues);
+            }, dialogue.delay);
+        }
+    }
+    
+    // ============================================
+    // 9. UI 및 인터랙션
+    // ============================================
+    
+    showDialogue(speaker, text) {
+        this.ui.dialogueBox.classList.remove('hidden');
+        this.ui.dialogueBox.classList.add('fade-in');
         
-        this.ctx.setTransform(1, 0, 0, 1, 0, 0); // 화면 흔들림 리셋
+        document.querySelector('.speaker').textContent = speaker;
+        document.querySelector('.text').textContent = text;
+    }
+    
+    updateUI() {
+        // 진행률 바 업데이트
+        this.ui.progressBar.style.width = `${this.state.sceneProgress * 100}%`;
         
-        this.draw();
-        
-        // 씬 자동 전환
-        const scene = this.scenes[this.currentScene];
-        const sceneStartTime = performance.now();
+        // 씬 타이틀 업데이트
+        if (this.scenes[this.state.currentScene]) {
+            document.querySelector('.scene-title').textContent = 
+                this.scenes[this.state.currentScene].title;
+        }
+    }
+    
+    shakeCamera(intensity, duration) {
+        this.state.camera.shake = {
+            intensity: intensity,
+            duration: duration
+        };
+    }
+    
+    // ============================================
+    // 10. 게임 흐름 제어
+    // ============================================
+    
+    startGame() {
+        this.state.isPlaying = true;
+        this.ui.titleScreen.classList.add('fade-out');
+        this.ui.sceneIndicator.classList.remove('hidden');
         
         setTimeout(() => {
-            this.nextScene();
-            this.animate();
-        }, scene.duration);
+            this.ui.titleScreen.classList.add('hidden');
+        }, 500);
         
-        requestAnimationFrame(() => this.animate());
+        // 첫 씬 시작
+        this.playSceneAudio(0);
+    }
+    
+    nextScene() {
+        this.state.currentScene++;
+        this.state.sceneProgress = 0;
+        this.state.time = 0;
+        this.state.dialogueIndex = 0;
+        
+        if (this.state.currentScene >= this.scenes.length) {
+            this.endGame();
+            return;
+        }
+        
+        // 씬별 오디오 재생
+        this.playSceneAudio(this.state.currentScene);
+        
+        // 대화창 초기화
+        this.ui.dialogueBox.classList.add('hidden');
+    }
+    
+    endGame() {
+        this.state.isPlaying = false;
+        
+        // 엔딩 크레딧 표시
+        this.showEndingCredits();
+    }
+    
+    showEndingCredits() {
+        const credits = document.createElement('div');
+        credits.className = 'credits-screen';
+        credits.innerHTML = `
+            <h1>DRAGONBALL Z</h1>
+            <h2>오반의 각성</h2>
+            <div class="credits-content">
+                <p>"지켜주거라..." - 안드로이드 16호</p>
+                <p>감독: Akira Toriyama</p>
+                <p>개발: GitHub Canvas Game</p>
+                <p>모든 그래픽은 Canvas로 직접 렌더링되었습니다.</p>
+            </div>
+            <button id="restart-btn" class="btn-primary">다시 보기</button>
+        `;
+        
+        document.getElementById('container').appendChild(credits);
+        
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            location.reload();
+        });
+    }
+    
+    handleKeyPress(e) {
+        switch(e.code) {
+            case 'Space':
+                if (this.state.isPlaying && this.ui.dialogueBox.classList.contains('fade-in')) {
+                    this.nextDialogue();
+                }
+                break;
+            case 'Escape':
+                this.state.isPaused = !this.state.isPaused;
+                break;
+        }
+    }
+    
+    handleClick() {
+        if (!this.state.isPlaying && !this.ui.titleScreen.classList.contains('hidden')) {
+            this.startGame();
+        } else if (this.state.isPlaying) {
+            this.nextScene();
+        }
+    }
+    
+    updateDebugInfo() {
+        const debug = document.getElementById('debug-info');
+        if (!debug) return;
+        
+        document.getElementById('fps-counter').textContent = this.fps || 0;
+        document.getElementById('scene-index').textContent = this.state.currentScene;
     }
 }
 
-// 게임 시작
-window.addEventListener('load', () => {
+// 게임 인스턴스 생성
+window.addEventListener('DOMContentLoaded', () => {
     const game = new DragonBallGame();
+    
+    // 글로벌 접근을 위한 디버그용
+    window.dragonBallGame = game;
 });
