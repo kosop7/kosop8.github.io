@@ -1,4 +1,4 @@
-// 드래곤볼 Z 게임 - 로딩 문제 해결 버전
+// 드래곤볼 Z 게임 - 볼륨 및 16호 수정 버전
 class DragonBallZGame {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
@@ -47,14 +47,13 @@ class DragonBallZGame {
     }
 
     setupBGM() {
-        // BGM 자동 재생 시도
+        // BGM 자동 재생 시도 (볼륨 아주 작게 설정)
         const playBGM = () => {
             if (!this.isBGMPlaying) {
-                this.bgm.volume = 0.5;
+                this.bgm.volume = 0.1; // 볼륨 아주 작게 (10%)
                 this.bgm.loop = true;
                 this.bgm.play().then(() => {
                     this.isBGMPlaying = true;
-                    console.log('BGM 재생 시작');
                 }).catch(error => {
                     console.log('BGM 재생 실패:', error);
                 });
@@ -112,9 +111,8 @@ class DragonBallZGame {
     }
 
     createScenes() {
-        // SCENE 1: 붕괴 직전의 정적
+        // SCENE 1
         this.scenes.push({
-            name: "붕괴 직전의 정적",
             characters: [
                 new Gohan(0, 0, 'defeated')
             ],
@@ -123,9 +121,8 @@ class DragonBallZGame {
             nextSceneTrigger: 'click'
         });
 
-        // SCENE 2: 16호의 마지막 시선
+        // SCENE 2
         this.scenes.push({
-            name: "16호의 마지막 시선",
             characters: [
                 new Android16(0, 0, 'normal')
             ],
@@ -140,9 +137,8 @@ class DragonBallZGame {
             nextSceneTrigger: 'click'
         });
 
-        // SCENE 3: 선택을 빼앗는 폭력
+        // SCENE 3
         this.scenes.push({
-            name: "선택을 빼앗는 폭력",
             characters: [
                 new Cell(40, 0, 'smirking'),
                 new Android16(-40, 0, 'damaged')
@@ -156,9 +152,8 @@ class DragonBallZGame {
             nextSceneTrigger: 'click'
         });
 
-        // SCENE 4: 오반의 눈, 세계의 균열
+        // SCENE 4
         this.scenes.push({
-            name: "오반의 눈, 세계의 균열",
             characters: [
                 new Gohan(0, 0, 'angry')
             ],
@@ -167,9 +162,8 @@ class DragonBallZGame {
             nextSceneTrigger: 'click'
         });
 
-        // SCENE 5: 침묵의 임계점
+        // SCENE 5
         this.scenes.push({
-            name: "침묵의 임계점",
             characters: [
                 new Gohan(0, 0, 'determined')
             ],
@@ -178,9 +172,8 @@ class DragonBallZGame {
             nextSceneTrigger: 'click'
         });
 
-        // SCENE 6: 폭발
+        // SCENE 6
         this.scenes.push({
-            name: "폭발",
             characters: [
                 new Gohan(0, 0, 'screaming')
             ],
@@ -189,9 +182,8 @@ class DragonBallZGame {
             nextSceneTrigger: 'click'
         });
 
-        // SCENE 7: 목격자들의 반응
+        // SCENE 7
         this.scenes.push({
-            name: "목격자들의 반응",
             characters: [
                 new Goku(-50, 0, 'shocked'),
                 new Piccolo(50, 0, 'surprised')
@@ -204,11 +196,10 @@ class DragonBallZGame {
             nextSceneTrigger: 'click'
         });
 
-        // SCENE 8: 새로운 얼굴
+        // SCENE 8 (초사이어인 변신)
         this.scenes.push({
-            name: "새로운 얼굴",
             characters: [
-                new Gohan(0, 0, 'super_saiyan')
+                new Gohan(0, 0, 'super_saiyan') // 크기 1배
             ],
             camera: { x: 0, y: 0, zoom: 2 },
             dialogue: [
@@ -218,11 +209,10 @@ class DragonBallZGame {
             nextSceneTrigger: 'click'
         });
 
-        // SCENE 9: 선언 없는 선언
+        // SCENE 9 (각성 후 크기 커짐 - 50배 강력)
         this.scenes.push({
-            name: "선언 없는 선언",
             characters: [
-                new Gohan(0, 0, 'final')
+                new Gohan(0, 0, 'final') // 크기 2배 (50배 강력)
             ],
             camera: { x: 0, y: 0, zoom: 1.8 },
             duration: 1000,
@@ -393,18 +383,15 @@ class DragonBallZGame {
 
         switch(sceneIndex) {
             case 0: // SCENE 1: 붕괴된 경기장
-                // 어두운 하늘
                 const gradient1 = ctx.createLinearGradient(0, 0, 0, h);
                 gradient1.addColorStop(0, '#1a1a2e');
                 gradient1.addColorStop(1, '#16213e');
                 ctx.fillStyle = gradient1;
                 ctx.fillRect(0, 0, w, h);
 
-                // 경기장 바닥
                 ctx.fillStyle = '#2c3e50';
                 ctx.fillRect(0, h * 0.6, w, h * 0.4);
 
-                // 균열
                 ctx.strokeStyle = '#34495e';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
@@ -418,18 +405,15 @@ class DragonBallZGame {
                 break;
 
             case 1: // SCENE 2: 잔디밭
-                // 하늘
                 const gradient2 = ctx.createLinearGradient(0, 0, 0, h * 0.6);
                 gradient2.addColorStop(0, '#87CEEB');
                 gradient2.addColorStop(1, '#4682B4');
                 ctx.fillStyle = gradient2;
                 ctx.fillRect(0, 0, w, h * 0.6);
 
-                // 잔디
                 ctx.fillStyle = '#2E8B57';
                 ctx.fillRect(0, h * 0.6, w, h * 0.4);
 
-                // 풀잎
                 ctx.fillStyle = '#3CB371';
                 for (let i = 0; i < 30; i++) {
                     const x = Math.random() * w;
@@ -440,7 +424,6 @@ class DragonBallZGame {
 
             case 4: // SCENE 5: 침묵
             case 5: // SCENE 6: 폭발
-                // 핏빛 하늘
                 const gradient3 = ctx.createLinearGradient(0, 0, 0, h);
                 gradient3.addColorStop(0, '#8B0000');
                 gradient3.addColorStop(0.5, '#B22222');
@@ -450,7 +433,6 @@ class DragonBallZGame {
                 break;
 
             case 7: // SCENE 8: 새로운 얼굴
-                // 번개 하늘
                 const gradient4 = ctx.createLinearGradient(0, 0, 0, h);
                 gradient4.addColorStop(0, '#0f0c29');
                 gradient4.addColorStop(0.5, '#302b63');
@@ -460,13 +442,11 @@ class DragonBallZGame {
                 break;
 
             case 8: // SCENE 9: 최종
-                // 암전 효과
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                 ctx.fillRect(0, 0, w, h);
                 break;
 
             default:
-                // 기본 배경
                 ctx.fillStyle = '#1C2833';
                 ctx.fillRect(0, 0, w, h);
         }
@@ -479,13 +459,10 @@ class DragonBallZGame {
         const w = ctx.canvas.width;
         const h = ctx.canvas.height;
 
-        // 배경 그리기
         this.drawBackground();
 
-        // 카메라 변환 적용
         ctx.save();
         
-        // 카메라 흔들림
         const shakeX = this.camera.shake > 0 ? (Math.random() - 0.5) * this.camera.shake * 20 : 0;
         const shakeY = this.camera.shake > 0 ? (Math.random() - 0.5) * this.camera.shake * 20 : 0;
         
@@ -493,15 +470,12 @@ class DragonBallZGame {
         ctx.scale(this.camera.zoom, this.camera.zoom);
         ctx.translate(-this.camera.x, -this.camera.y);
 
-        // 파티클 그리기
         this.particles.forEach(p => p.draw(ctx));
 
-        // 캐릭터 그리기
         this.characters.forEach(char => char.draw(ctx));
 
         ctx.restore();
 
-        // 장면별 특수 효과
         this.renderSceneEffects();
     }
 
@@ -512,11 +486,11 @@ class DragonBallZGame {
         const h = ctx.canvas.height;
 
         switch(sceneIndex) {
-            case 3: // SCENE 4: 비둘기 효과
+            case 3:
                 this.drawDove();
                 break;
                 
-            case 5: // SCENE 6: 지면 갈라짐
+            case 5:
                 this.drawGroundCrack();
                 break;
         }
@@ -531,13 +505,11 @@ class DragonBallZGame {
         ctx.save();
         ctx.translate(x, y);
 
-        // 비둘기 몸통
         ctx.fillStyle = 'white';
         ctx.beginPath();
         ctx.ellipse(0, 0, 15, 8, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 날개
         ctx.beginPath();
         ctx.ellipse(-12, -3, 12, 6, Math.sin(time * 8) * 0.3, 0, Math.PI * 2);
         ctx.fill();
@@ -546,7 +518,6 @@ class DragonBallZGame {
         ctx.ellipse(12, -3, 12, 6, -Math.sin(time * 8) * 0.3, 0, Math.PI * 2);
         ctx.fill();
 
-        // 머리
         ctx.beginPath();
         ctx.arc(0, -8, 5, 0, Math.PI * 2);
         ctx.fill();
@@ -563,7 +534,6 @@ class DragonBallZGame {
         ctx.lineWidth = 4;
         ctx.lineCap = 'round';
 
-        // 주요 균열
         ctx.beginPath();
         ctx.moveTo(centerX - 150, centerY);
         for (let i = 0; i < 15; i++) {
@@ -573,7 +543,6 @@ class DragonBallZGame {
         }
         ctx.stroke();
 
-        // 작은 균열들
         for (let j = 0; j < 3; j++) {
             ctx.beginPath();
             const startX = centerX - 100 + j * 50;
@@ -602,11 +571,9 @@ class DragonBallZGame {
         const w = ctx.canvas.width;
         const h = ctx.canvas.height;
 
-        // 암전
         ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
         ctx.fillRect(0, 0, w, h);
 
-        // 엔딩 텍스트
         ctx.fillStyle = '#8A2BE2';
         ctx.font = 'bold 48px Noto Sans KR';
         ctx.textAlign = 'center';
@@ -616,7 +583,6 @@ class DragonBallZGame {
         ctx.font = '24px Noto Sans KR';
         ctx.fillText('터치하여 다시 시작', w / 2, h / 2 + 30);
 
-        // 다시 시작 이벤트
         const restart = () => {
             this.canvas.removeEventListener('click', restart);
             this.canvas.removeEventListener('touchstart', restart);
@@ -631,7 +597,6 @@ class DragonBallZGame {
     }
 }
 
-// 캐릭터 기본 클래스
 class Character {
     constructor(x, y) {
         this.x = x;
@@ -656,13 +621,11 @@ class Character {
     }
 
     drawCharacter(ctx) {
-        // 기본 도형 (자식 클래스에서 오버라이드)
         ctx.fillStyle = 'red';
         ctx.fillRect(-20, -20, 40, 40);
     }
 }
 
-// 손오반 클래스
 class Gohan extends Character {
     constructor(x, y, state = 'normal') {
         super(x, y);
@@ -693,7 +656,7 @@ class Gohan extends Character {
                 this.expression = { eyebrows: 'angry', eyes: 'angry', mouth: 'grit', tear: true };
                 this.aura.active = true;
                 this.aura.intensity = 0.5;
-                this.scale = 1 + Math.sin(this.animationTime * 0.01) * 0.1;
+                this.scale = 1;
                 break;
                 
             case 'determined':
@@ -707,7 +670,7 @@ class Gohan extends Character {
                 this.expression = { eyebrows: 'angry', eyes: 'wide', mouth: 'scream', tear: false };
                 this.aura.active = true;
                 this.aura.intensity = 1.5;
-                this.scale = 1.2 + Math.sin(this.animationTime * 0.02) * 0.2;
+                this.scale = 1;
                 break;
                 
             case 'super_saiyan':
@@ -715,7 +678,7 @@ class Gohan extends Character {
                 this.hairColor = '#FFD700';
                 this.aura.active = true;
                 this.aura.intensity = 2;
-                this.scale = 1.1;
+                this.scale = 1.2; // 초사이어인 시 크기 약간 증가
                 break;
                 
             case 'final':
@@ -723,25 +686,23 @@ class Gohan extends Character {
                 this.hairColor = '#FFD700';
                 this.aura.active = true;
                 this.aura.intensity = 2.5;
-                this.scale = 1;
+                this.scale = 2.0; // 각성 후 크기 2배 증가 (50배 강력해진 효과)
                 break;
         }
     }
 
     drawCharacter(ctx) {
-        // 오라
         if (this.aura.active) {
-            const gradient = ctx.createRadialGradient(0, 0, 20, 0, 0, 60 + this.aura.intensity * 40);
+            const gradient = ctx.createRadialGradient(0, 0, 20 * this.scale, 0, 0, (60 + this.aura.intensity * 40) * this.scale);
             gradient.addColorStop(0, `rgba(255, 215, 0, ${0.3 + this.aura.intensity * 0.2})`);
             gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
             
             ctx.fillStyle = gradient;
             ctx.beginPath();
-            ctx.arc(0, 0, 60 + this.aura.intensity * 40, 0, Math.PI * 2);
+            ctx.arc(0, 0, (60 + this.aura.intensity * 40) * this.scale, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // 머리카락
         ctx.fillStyle = this.hairColor;
         ctx.beginPath();
         ctx.moveTo(0, -50);
@@ -768,7 +729,6 @@ class Gohan extends Character {
         ctx.closePath();
         ctx.fill();
 
-        // 얼굴
         ctx.fillStyle = this.skinColor;
         ctx.beginPath();
         ctx.moveTo(-20, -40);
@@ -780,13 +740,10 @@ class Gohan extends Character {
         ctx.closePath();
         ctx.fill();
 
-        // 눈
         this.drawEyes(ctx);
         
-        // 입
         this.drawMouth(ctx);
         
-        // 눈물
         if (this.expression.tear) {
             ctx.fillStyle = 'rgba(100, 150, 255, 0.8)';
             ctx.beginPath();
@@ -798,7 +755,6 @@ class Gohan extends Character {
             ctx.fill();
         }
 
-        // 옷
         ctx.fillStyle = this.giColor;
         ctx.fillRect(-25, 0, 50, 40);
         
@@ -950,14 +906,12 @@ class Gohan extends Character {
     }
 }
 
-// 안드로이드 16호 클래스
 class Android16 extends Character {
     constructor(x, y, state = 'normal') {
         super(x, y);
         this.state = state;
-        this.metalColor = '#666666';
-        this.darkMetal = '#333333';
-        this.redColor = '#CC0000';
+        this.hairColor = '#CC0000'; // 빨간 머리카락
+        this.skinColor = '#FFD7B5'; // 살색 얼굴
         this.damage = 0;
     }
 
@@ -970,66 +924,95 @@ class Android16 extends Character {
     }
 
     drawCharacter(ctx) {
-        ctx.fillStyle = this.metalColor;
-        ctx.fillRect(-25, -40, 50, 40);
+        // 머리통이 오른쪽으로 누워있는 형태 (가로로 긴 타원형)
+        ctx.save();
+        ctx.rotate(Math.PI / 6); // 30도 기울임
         
-        ctx.fillStyle = this.darkMetal;
-        ctx.fillRect(-20, -35, 40, 30);
+        // 얼굴 배경 (살색)
+        ctx.fillStyle = this.skinColor;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 30, 20, 0, 0, Math.PI * 2); // 가로로 긴 타원
+        ctx.fill();
         
-        ctx.fillStyle = this.redColor;
-        ctx.fillRect(-15, -30, 8, 6);
-        ctx.fillRect(7, -30, 8, 6);
+        // 머리카락 (빨간색)
+        ctx.fillStyle = this.hairColor;
+        // 위쪽 머리카락
+        ctx.beginPath();
+        ctx.ellipse(0, -15, 25, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
         
-        ctx.fillStyle = this.darkMetal;
-        ctx.fillRect(-12, -20, 24, 3);
-        
-        ctx.strokeStyle = '#222222';
-        ctx.lineWidth = 1.5;
+        // 옆머리
+        ctx.beginPath();
+        ctx.ellipse(-25, 0, 8, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
         
         ctx.beginPath();
-        ctx.moveTo(-25, -25);
-        ctx.lineTo(25, -25);
-        ctx.stroke();
+        ctx.ellipse(25, 0, 8, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
         
+        // 눈 (검정색, 무표정)
+        ctx.fillStyle = 'black';
+        // 왼쪽 눈
         ctx.beginPath();
-        ctx.moveTo(-8, -40);
-        ctx.lineTo(-8, 0);
-        ctx.stroke();
+        ctx.ellipse(-12, -5, 6, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
         
+        // 오른쪽 눈
         ctx.beginPath();
-        ctx.moveTo(8, -40);
-        ctx.lineTo(8, 0);
+        ctx.ellipse(8, -5, 6, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 코 (작은 삼각형)
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-3, 5);
+        ctx.lineTo(3, 5);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 입 (무표정한 직선)
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-10, 10);
+        ctx.lineTo(10, 10);
         ctx.stroke();
         
+        // 파손 효과
         if (this.damage > 0) {
             ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
             ctx.lineWidth = 2;
             
+            // 크랙
             ctx.beginPath();
-            ctx.moveTo(10, -40);
-            ctx.lineTo(20, -30);
-            ctx.lineTo(15, -20);
+            ctx.moveTo(15, -10);
+            ctx.lineTo(20, 0);
+            ctx.lineTo(15, 5);
             ctx.stroke();
             
+            // 스파크
             if (this.damage > 0.5) {
                 ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
                 ctx.lineWidth = 1;
                 
                 for (let i = 0; i < 3; i++) {
                     ctx.beginPath();
-                    const x = 15 + Math.random() * 5;
-                    const y = -30 + Math.random() * 5;
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x + (Math.random() - 0.5) * 8, 
-                              y + (Math.random() - 0.5) * 8);
+                    const sparkX = 18 + Math.random() * 5;
+                    const sparkY = -2 + Math.random() * 5;
+                    ctx.moveTo(sparkX, sparkY);
+                    ctx.lineTo(
+                        sparkX + (Math.random() - 0.5) * 8,
+                        sparkY + (Math.random() - 0.5) * 8
+                    );
                     ctx.stroke();
                 }
             }
         }
+        
+        ctx.restore();
     }
 }
 
-// 셀 클래스
 class Cell extends Character {
     constructor(x, y, state = 'normal') {
         super(x, y);
@@ -1097,7 +1080,6 @@ class Cell extends Character {
     }
 }
 
-// 손오공 클래스
 class Goku extends Character {
     constructor(x, y, state = 'normal') {
         super(x, y);
@@ -1162,7 +1144,6 @@ class Goku extends Character {
     }
 }
 
-// 피콜로 클래스
 class Piccolo extends Character {
     constructor(x, y, state = 'normal') {
         super(x, y);
@@ -1226,7 +1207,6 @@ class Piccolo extends Character {
     }
 }
 
-// 파티클 클래스
 class Particle {
     constructor(x, y, type) {
         this.x = x;
@@ -1282,7 +1262,6 @@ class Particle {
     }
 }
 
-// 게임 시작 (DOMContentLoaded 사용)
 document.addEventListener('DOMContentLoaded', () => {
     new DragonBallZGame();
 });
