@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>손오반 각성시키기</title>
+    <title>DragonBall Z: 각성</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +21,7 @@
         <div class="dialog-box" id="dialogBox">
             <div class="character-name" id="characterName"></div>
             <div class="dialog-text" id="dialogText"></div>
-            <div class="touch-hint" id="touchHint">▼ 터치하삼</div>
+            <div class="touch-hint">▼ 터치하여 계속</div>
         </div>
         <div class="scene-indicator" id="sceneIndicator">Scene 1/9</div>
         <div class="loading-screen" id="loadingScreen">
@@ -29,19 +30,7 @@
                 <div class="loading-progress" id="loadingProgress"></div>
             </div>
         </div>
-        <div class="controls">
-            <button id="muteBtn" class="control-btn">🔇 음소거</button>
-            <button id="replayBtn" class="control-btn">🔄 다시보기</button>
-        </div>
-        <div class="tap-to-next">화면을 터치하여 다음 씬으로</div>
     </div>
-    
-    <audio id="bgm" loop>
-        <source src="assets/BGM.m4a" type="audio/mp4">
-        <source src="assets/BGM.mp3" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
-    
     <script src="script.js"></script>
 </body>
 </html>
