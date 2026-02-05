@@ -1,4 +1,4 @@
-// 드래곤볼 Z 게임 - 씬 전환 및 BGM 추가
+// 드래곤볼 Z 게임 - 로딩 문제 해결 버전
 class DragonBallZGame {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
@@ -17,6 +17,7 @@ class DragonBallZGame {
         this.loadProgress = 0;
         this.bgm = document.getElementById('bgm');
         this.isBGMPlaying = false;
+        this.loadingInterval = null;
         this.init();
     }
 
@@ -49,7 +50,7 @@ class DragonBallZGame {
         // BGM 자동 재생 시도
         const playBGM = () => {
             if (!this.isBGMPlaying) {
-                this.bgm.volume = 0.5; // 적절한 볼륨 설정
+                this.bgm.volume = 0.5;
                 this.bgm.loop = true;
                 this.bgm.play().then(() => {
                     this.isBGMPlaying = true;
@@ -63,21 +64,32 @@ class DragonBallZGame {
         // 사용자 상호작용 시 BGM 재생
         document.addEventListener('click', playBGM);
         document.addEventListener('touchstart', playBGM);
-        
-        // 로딩 완료 후에도 재생 시도
-        setTimeout(playBGM, 1000);
     }
 
     startLoading() {
-        const interval = setInterval(() => {
+        const loadingScreen = document.getElementById('loading-screen');
+        const loadingProgress = document.querySelector('.loading-progress');
+        
+        if (!loadingScreen || !loadingProgress) {
+            console.error('로딩 요소를 찾을 수 없습니다');
+            this.isLoading = false;
+            this.start();
+            return;
+        }
+        
+        loadingScreen.style.display = 'flex';
+        this.loadProgress = 0;
+        loadingProgress.style.width = '0%';
+        
+        this.loadingInterval = setInterval(() => {
             this.loadProgress += 0.05;
-            document.querySelector('.loading-progress').style.width = `${this.loadProgress * 100}%`;
+            loadingProgress.style.width = `${this.loadProgress * 100}%`;
             
             if (this.loadProgress >= 1) {
-                clearInterval(interval);
+                clearInterval(this.loadingInterval);
                 setTimeout(() => {
                     this.isLoading = false;
-                    document.getElementById('loading-screen').style.display = 'none';
+                    loadingScreen.style.display = 'none';
                     this.start();
                 }, 500);
             }
@@ -228,7 +240,10 @@ class DragonBallZGame {
         const scene = this.scenes[index];
         
         // 업데이트 UI
-        document.getElementById('scene-number').textContent = index + 1;
+        const sceneNumberElement = document.getElementById('scene-number');
+        if (sceneNumberElement) {
+            sceneNumberElement.textContent = index + 1;
+        }
         
         // 캐릭터 초기화
         this.characters = scene.characters;
@@ -261,10 +276,19 @@ class DragonBallZGame {
         this.isDialogueActive = true;
         const dialogue = this.dialogue[this.currentDialogueIndex];
         const dialogueBox = document.getElementById('dialogue-box');
-        dialogueBox.classList.remove('hidden');
+        if (dialogueBox) {
+            dialogueBox.classList.remove('hidden');
+        }
         
-        document.getElementById('speaker-name').textContent = dialogue.speaker;
-        document.getElementById('dialogue-text').textContent = dialogue.text;
+        const speakerNameElement = document.getElementById('speaker-name');
+        const dialogueTextElement = document.getElementById('dialogue-text');
+        
+        if (speakerNameElement) {
+            speakerNameElement.textContent = dialogue.speaker;
+        }
+        if (dialogueTextElement) {
+            dialogueTextElement.textContent = dialogue.text;
+        }
         
         this.dialogueTimer = dialogue.duration;
         this.dialogueStartTime = Date.now();
@@ -281,7 +305,10 @@ class DragonBallZGame {
 
     hideDialogue() {
         this.isDialogueActive = false;
-        document.getElementById('dialogue-box').classList.add('hidden');
+        const dialogueBox = document.getElementById('dialogue-box');
+        if (dialogueBox) {
+            dialogueBox.classList.add('hidden');
+        }
     }
 
     handleClick(e) {
@@ -446,6 +473,8 @@ class DragonBallZGame {
     }
 
     render() {
+        if (!this.ctx || !this.isPlaying) return;
+        
         const ctx = this.ctx;
         const w = ctx.canvas.width;
         const h = ctx.canvas.height;
@@ -640,8 +669,8 @@ class Gohan extends Character {
         this.state = state;
         this.hairColor = '#000000';
         this.skinColor = '#FFD7B5';
-        this.giColor = '#8A2BE2'; // 보라색 도복
-        this.beltColor = '#0000CD'; // 파란색 띠
+        this.giColor = '#8A2BE2';
+        this.beltColor = '#0000CD';
         this.aura = { active: false, intensity: 0, color: '#FFD700' };
         this.expression = {
             eyebrows: 'normal',
@@ -712,10 +741,9 @@ class Gohan extends Character {
             ctx.fill();
         }
 
-        // 머리카락 (각진 형태)
+        // 머리카락
         ctx.fillStyle = this.hairColor;
         ctx.beginPath();
-        // 정수리
         ctx.moveTo(0, -50);
         ctx.lineTo(-20, -65);
         ctx.lineTo(-15, -80);
@@ -724,7 +752,6 @@ class Gohan extends Character {
         ctx.closePath();
         ctx.fill();
         
-        // 옆머리
         ctx.beginPath();
         ctx.moveTo(-25, -45);
         ctx.lineTo(-35, -60);
@@ -741,7 +768,7 @@ class Gohan extends Character {
         ctx.closePath();
         ctx.fill();
 
-        // 얼굴 (각진 형태)
+        // 얼굴
         ctx.fillStyle = this.skinColor;
         ctx.beginPath();
         ctx.moveTo(-20, -40);
@@ -771,12 +798,10 @@ class Gohan extends Character {
             ctx.fill();
         }
 
-        // 옷 (보라색 도복)
+        // 옷
         ctx.fillStyle = this.giColor;
-        // 상의
         ctx.fillRect(-25, 0, 50, 40);
         
-        // 목덜미 V넥
         ctx.fillStyle = '#4B0082';
         ctx.beginPath();
         ctx.moveTo(-15, 0);
@@ -784,12 +809,10 @@ class Gohan extends Character {
         ctx.lineTo(15, 0);
         ctx.fill();
         
-        // 팔 (나시)
         ctx.fillStyle = this.skinColor;
         ctx.fillRect(-35, 10, 10, 25);
         ctx.fillRect(25, 10, 10, 25);
         
-        // 파란색 띠
         ctx.fillStyle = this.beltColor;
         ctx.fillRect(-30, 35, 60, 8);
     }
@@ -820,7 +843,6 @@ class Gohan extends Character {
                 pupilSize = 5;
         }
 
-        // 흰자
         ctx.fillStyle = 'white';
         ctx.beginPath();
         ctx.ellipse(-15, -30, 10, eyeHeight, 0, 0, Math.PI * 2);
@@ -830,7 +852,6 @@ class Gohan extends Character {
         ctx.ellipse(15, -30, 10, eyeHeight, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 눈동자
         ctx.fillStyle = 'black';
         ctx.beginPath();
         ctx.arc(-15, -30, pupilSize, 0, Math.PI * 2);
@@ -840,12 +861,10 @@ class Gohan extends Character {
         ctx.arc(15, -30, pupilSize, 0, Math.PI * 2);
         ctx.fill();
 
-        // 눈썹
         ctx.fillStyle = 'black';
         const eyebrows = this.expression.eyebrows;
         
         if (eyebrows === 'angry') {
-            // 찌푸린 눈썹
             ctx.beginPath();
             ctx.moveTo(-25, -42);
             ctx.lineTo(-8, -38);
@@ -860,7 +879,6 @@ class Gohan extends Character {
             ctx.closePath();
             ctx.fill();
         } else if (eyebrows === 'sad') {
-            // 슬픈 눈썹
             ctx.beginPath();
             ctx.moveTo(-25, -38);
             ctx.lineTo(-5, -42);
@@ -875,7 +893,6 @@ class Gohan extends Character {
             ctx.closePath();
             ctx.fill();
         } else {
-            // 기본 눈썹
             ctx.beginPath();
             ctx.moveTo(-25, -40);
             ctx.lineTo(-5, -35);
@@ -953,34 +970,27 @@ class Android16 extends Character {
     }
 
     drawCharacter(ctx) {
-        // 머리 (각진 사각형)
         ctx.fillStyle = this.metalColor;
         ctx.fillRect(-25, -40, 50, 40);
         
-        // 얼굴 패널
         ctx.fillStyle = this.darkMetal;
         ctx.fillRect(-20, -35, 40, 30);
         
-        // 눈 (빨간색)
         ctx.fillStyle = this.redColor;
         ctx.fillRect(-15, -30, 8, 6);
         ctx.fillRect(7, -30, 8, 6);
         
-        // 입 (직선)
         ctx.fillStyle = this.darkMetal;
         ctx.fillRect(-12, -20, 24, 3);
         
-        // 기계적 디테일
         ctx.strokeStyle = '#222222';
         ctx.lineWidth = 1.5;
         
-        // 수평선
         ctx.beginPath();
         ctx.moveTo(-25, -25);
         ctx.lineTo(25, -25);
         ctx.stroke();
         
-        // 수직선
         ctx.beginPath();
         ctx.moveTo(-8, -40);
         ctx.lineTo(-8, 0);
@@ -991,17 +1001,288 @@ class Android16 extends Character {
         ctx.lineTo(8, 0);
         ctx.stroke();
         
-        // 파손 효과
         if (this.damage > 0) {
             ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
             ctx.lineWidth = 2;
             
-            // 크랙
             ctx.beginPath();
             ctx.moveTo(10, -40);
             ctx.lineTo(20, -30);
             ctx.lineTo(15, -20);
             ctx.stroke();
             
-            // 스파크
-            if (this.damage > 0.5
+            if (this.damage > 0.5) {
+                ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+                ctx.lineWidth = 1;
+                
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    const x = 15 + Math.random() * 5;
+                    const y = -30 + Math.random() * 5;
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + (Math.random() - 0.5) * 8, 
+                              y + (Math.random() - 0.5) * 8);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+}
+
+// 셀 클래스
+class Cell extends Character {
+    constructor(x, y, state = 'normal') {
+        super(x, y);
+        this.state = state;
+        this.armorColor = '#2E8B57';
+        this.darkArmor = '#1E5B37';
+        this.highlight = '#4CAF50';
+        this.smile = 0;
+    }
+
+    update(deltaTime) {
+        super.update(deltaTime);
+        
+        if (this.state === 'smirking') {
+            this.smile = 0.5 + Math.sin(this.animationTime * 0.003) * 0.3;
+        }
+    }
+
+    drawCharacter(ctx) {
+        ctx.fillStyle = this.armorColor;
+        ctx.beginPath();
+        ctx.moveTo(0, -50);
+        ctx.lineTo(-25, -30);
+        ctx.lineTo(-20, 0);
+        ctx.lineTo(20, 0);
+        ctx.lineTo(25, -30);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = this.highlight;
+        ctx.beginPath();
+        ctx.moveTo(0, -45);
+        ctx.lineTo(-20, -25);
+        ctx.lineTo(-15, 0);
+        ctx.lineTo(15, 0);
+        ctx.lineTo(20, -25);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = 'black';
+        ctx.beginPath();
+        ctx.ellipse(-12, -35, 6, 3, 0, 0, Math.PI);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.ellipse(12, -35, 6, 3, 0, 0, Math.PI);
+        ctx.fill();
+        
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2.5;
+        const smileY = -15 + this.smile * 10;
+        ctx.beginPath();
+        ctx.moveTo(-15, smileY);
+        ctx.quadraticCurveTo(0, smileY + 5 + this.smile * 5, 
+                           15, smileY - this.smile * 3);
+        ctx.stroke();
+        
+        ctx.fillStyle = this.darkArmor;
+        ctx.beginPath();
+        ctx.moveTo(0, -50);
+        ctx.lineTo(-5, -65);
+        ctx.lineTo(5, -65);
+        ctx.closePath();
+        ctx.fill();
+    }
+}
+
+// 손오공 클래스
+class Goku extends Character {
+    constructor(x, y, state = 'normal') {
+        super(x, y);
+        this.state = state;
+    }
+
+    drawCharacter(ctx) {
+        ctx.fillStyle = '#000000';
+        this.drawSpikyHair(ctx, 5, 25, -35);
+        
+        ctx.fillStyle = '#FFD7B5';
+        ctx.beginPath();
+        ctx.arc(0, -20, 18, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.ellipse(-8, -25, 7, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.ellipse(8, -25, 7, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = 'black';
+        ctx.beginPath();
+        ctx.arc(-8, -25, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(8, -25, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, -10, 6, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#FF6600';
+        ctx.fillRect(-15, 0, 30, 25);
+    }
+
+    drawSpikyHair(ctx, spikes, length, yOffset) {
+        for (let i = 0; i < spikes; i++) {
+            const angle = (i / spikes) * Math.PI * 2;
+            const spikeLength = length * (0.8 + Math.random() * 0.4);
+            
+            ctx.beginPath();
+            ctx.moveTo(0, yOffset);
+            ctx.lineTo(
+                Math.cos(angle) * spikeLength,
+                yOffset + Math.sin(angle) * spikeLength
+            );
+            ctx.lineTo(
+                Math.cos(angle + 0.2) * (spikeLength * 0.6),
+                yOffset + Math.sin(angle + 0.2) * (spikeLength * 0.6)
+            );
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+}
+
+// 피콜로 클래스
+class Piccolo extends Character {
+    constructor(x, y, state = 'normal') {
+        super(x, y);
+        this.state = state;
+    }
+
+    drawCharacter(ctx) {
+        ctx.fillStyle = '#2E8B57';
+        ctx.beginPath();
+        ctx.ellipse(0, -25, 15, 25, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#1E5B37';
+        ctx.beginPath();
+        ctx.moveTo(0, -45);
+        ctx.lineTo(-5, -55);
+        ctx.lineTo(0, -50);
+        ctx.lineTo(5, -55);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.ellipse(-6, -25, 4, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.ellipse(6, -25, 4, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = 'black';
+        ctx.beginPath();
+        ctx.arc(-6, -25, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(6, -25, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#1E5B37';
+        ctx.beginPath();
+        ctx.moveTo(-10, -35);
+        ctx.lineTo(-2, -32);
+        ctx.lineTo(-4, -38);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(10, -35);
+        ctx.lineTo(2, -32);
+        ctx.lineTo(4, -38);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-10, -15);
+        ctx.lineTo(10, -15);
+        ctx.stroke();
+    }
+}
+
+// 파티클 클래스
+class Particle {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.life = 1.0;
+        this.size = type === 'tear' ? 2 : 3 + Math.random() * 4;
+        this.color = this.getColor();
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = type === 'tear' ? 2 : (Math.random() - 0.5) * 3;
+        this.decay = type === 'tear' ? 0.02 : 0.01 + Math.random() * 0.02;
+    }
+
+    getColor() {
+        switch(this.type) {
+            case 'tear': return 'rgba(100, 150, 255, 0.8)';
+            case 'energy': return 'rgba(255, 215, 0, 0.8)';
+            case 'lightning': return 'rgba(100, 200, 255, 0.9)';
+            default: return 'rgba(255, 255, 255, 0.8)';
+        }
+    }
+
+    update(deltaTime) {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+        return this.life > 0;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.life;
+        
+        if (this.type === 'lightning') {
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            for (let i = 0; i < 3; i++) {
+                ctx.lineTo(
+                    this.x + (Math.random() - 0.5) * 20,
+                    this.y + (i + 1) * 10
+                );
+            }
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.globalAlpha = 1;
+    }
+}
+
+// 게임 시작 (DOMContentLoaded 사용)
+document.addEventListener('DOMContentLoaded', () => {
+    new DragonBallZGame();
+});
