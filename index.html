@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>손오반 각성</title>
+    <title>손오반 각성시키기</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,13 +21,20 @@
             <div id="scene-indicator">SCENE <span id="scene-number">1</span>/9</div>
         </div>
         <div id="loading-screen">
-            <div class="loading-text">손오반 각성</div>
+            <div class="loading-text">손오반 각성시키기</div>
             <div class="loading-subtext">로딩 중...</div>
             <div class="loading-bar">
                 <div class="loading-progress"></div>
             </div>
         </div>
     </div>
+    
+    <!-- BGM 플레이어 -->
+    <audio id="bgm" loop preload="auto">
+        <source src="assets/BGM.m4a" type="audio/mp4">
+        <source src="assets/BGM.mp3" type="audio/mpeg">
+    </audio>
+    
     <script src="script.js"></script>
 </body>
 </html>
