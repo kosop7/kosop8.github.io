@@ -1,4 +1,4 @@
-// 드래곤볼 Z 게임 - 볼륨 및 16호 수정 버전
+// 드래곤볼 Z 게임 - 새 위치 수정 버전
 class DragonBallZGame {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
@@ -196,10 +196,10 @@ class DragonBallZGame {
             nextSceneTrigger: 'click'
         });
 
-        // SCENE 8 (초사이어인 변신)
+        // SCENE 8
         this.scenes.push({
             characters: [
-                new Gohan(0, 0, 'super_saiyan') // 크기 1배
+                new Gohan(0, 0, 'super_saiyan')
             ],
             camera: { x: 0, y: 0, zoom: 2 },
             dialogue: [
@@ -209,10 +209,10 @@ class DragonBallZGame {
             nextSceneTrigger: 'click'
         });
 
-        // SCENE 9 (각성 후 크기 커짐 - 50배 강력)
+        // SCENE 9
         this.scenes.push({
             characters: [
-                new Gohan(0, 0, 'final') // 크기 2배 (50배 강력)
+                new Gohan(0, 0, 'final')
             ],
             camera: { x: 0, y: 0, zoom: 1.8 },
             duration: 1000,
@@ -486,11 +486,11 @@ class DragonBallZGame {
         const h = ctx.canvas.height;
 
         switch(sceneIndex) {
-            case 3:
+            case 3: // SCENE 4: 비둘기 효과 - 원래 위치로 복원
                 this.drawDove();
                 break;
                 
-            case 5:
+            case 5: // SCENE 6: 지면 갈라짐
                 this.drawGroundCrack();
                 break;
         }
@@ -499,8 +499,9 @@ class DragonBallZGame {
     drawDove() {
         const ctx = this.ctx;
         const time = Date.now() * 0.001;
-        const x = ctx.canvas.width * 0.5 + Math.sin(time) * 100;
-        const y = ctx.canvas.height * 0.4 - (time * 60) % ctx.canvas.height;
+        // 원래 위치로 복원: 화면 중앙에서 시작
+        const x = ctx.canvas.width * 0.5;
+        const y = ctx.canvas.height * 0.3;
 
         ctx.save();
         ctx.translate(x, y);
@@ -511,11 +512,11 @@ class DragonBallZGame {
         ctx.fill();
 
         ctx.beginPath();
-        ctx.ellipse(-12, -3, 12, 6, Math.sin(time * 8) * 0.3, 0, Math.PI * 2);
+        ctx.ellipse(-12, -3, 12, 6, 0, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.beginPath();
-        ctx.ellipse(12, -3, 12, 6, -Math.sin(time * 8) * 0.3, 0, Math.PI * 2);
+        ctx.ellipse(12, -3, 12, 6, 0, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.beginPath();
@@ -686,7 +687,7 @@ class Gohan extends Character {
                 this.hairColor = '#FFD700';
                 this.aura.active = true;
                 this.aura.intensity = 2.5;
-                this.scale = 2.0; // 각성 후 크기 2배 증가 (50배 강력해진 효과)
+                this.scale = 2.0; // 각성 후 크기 2배 증가
                 break;
         }
     }
@@ -924,24 +925,22 @@ class Android16 extends Character {
     }
 
     drawCharacter(ctx) {
-        // 머리통이 오른쪽으로 누워있는 형태 (가로로 긴 타원형)
+        // 머리통이 오른쪽으로 누워있는 형태
         ctx.save();
         ctx.rotate(Math.PI / 6); // 30도 기울임
         
         // 얼굴 배경 (살색)
         ctx.fillStyle = this.skinColor;
         ctx.beginPath();
-        ctx.ellipse(0, 0, 30, 20, 0, 0, Math.PI * 2); // 가로로 긴 타원
+        ctx.ellipse(0, 0, 30, 20, 0, 0, Math.PI * 2);
         ctx.fill();
         
         // 머리카락 (빨간색)
         ctx.fillStyle = this.hairColor;
-        // 위쪽 머리카락
         ctx.beginPath();
         ctx.ellipse(0, -15, 25, 10, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // 옆머리
         ctx.beginPath();
         ctx.ellipse(-25, 0, 8, 12, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -952,17 +951,15 @@ class Android16 extends Character {
         
         // 눈 (검정색, 무표정)
         ctx.fillStyle = 'black';
-        // 왼쪽 눈
         ctx.beginPath();
         ctx.ellipse(-12, -5, 6, 4, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // 오른쪽 눈
         ctx.beginPath();
         ctx.ellipse(8, -5, 6, 4, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // 코 (작은 삼각형)
+        // 코
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(-3, 5);
@@ -983,14 +980,12 @@ class Android16 extends Character {
             ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
             ctx.lineWidth = 2;
             
-            // 크랙
             ctx.beginPath();
             ctx.moveTo(15, -10);
             ctx.lineTo(20, 0);
             ctx.lineTo(15, 5);
             ctx.stroke();
             
-            // 스파크
             if (this.damage > 0.5) {
                 ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
                 ctx.lineWidth = 1;
