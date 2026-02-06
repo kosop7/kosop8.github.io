@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>손오반 각성시키기</title>
+    <title>드래곤볼 Z - 각성시키기</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,10 +18,32 @@
                 <div id="dialogue-text"></div>
                 <div id="touch-indicator">터치하여라</div>
             </div>
-            <div id="scene-indicator">SCENE <span id="scene-number">1</span>/9</div>
+            <div id="scene-indicator">SCENE <span id="scene-number">1</span>/<span id="scene-total">9</span></div>
         </div>
+        <!-- 새로 추가된 캐릭터 선택 화면 -->
+        <div id="character-select-screen" class="hidden">
+            <div class="select-title">각성시킬 캐릭터를 선택하라!</div>
+            <div class="character-options">
+                <div class="character-option" id="select-goku">
+                    <div class="character-silhouette">
+                        <!-- 손오공 실루엣/이미지 자리 -->
+                    </div>
+                    <div class="character-name">손오공 각성</div>
+                    <div class="character-desc">초사이어인의 전설을 다시 쓴다</div>
+                </div>
+                <div class="character-option" id="select-gohan">
+                    <div class="character-silhouette">
+                        <!-- 손오반 실루엣/이미지 자리 -->
+                    </div>
+                    <div class="character-name">손오반 각성</div>
+                    <div class="character-desc">분노가 잠든 힘을 깨운다</div>
+                </div>
+            </div>
+            <div class="select-instruction">캐릭터를 터치하여 선택하라!</div>
+        </div>
+        <!-- 기존 로딩 화면 -->
         <div id="loading-screen">
-            <div class="loading-text">손오반 각성시키기</div>
+            <div class="loading-text">드래곤볼 Z - 각성시키기</div>
             <div class="loading-subtext">로딩 중...</div>
             <div class="loading-bar">
                 <div class="loading-progress"></div>
